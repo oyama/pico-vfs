@@ -1,0 +1,1 @@
+#define PICO_VFS_FAT_CHAN_FF_VOLUMES  4
