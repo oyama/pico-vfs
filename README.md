@@ -1,8 +1,8 @@
 # Thin virtual file system for Raspberry Pi Pico
 
-__pico-vfs__ adds a Unix-like, thin virtual file system (VFS) layer to the Raspberry Pi Pico. Any block device and file system can be combined into a single virtual file system, starting from root `/`.
+__pico-vfs__ adds a Unix-like, thin virtual file system (VFS) layer to the Raspberry Pi Pico. Any __block device__ and __file system__ can be combined into a single virtual file system, starting from root `/`.
 
-## Getting Started
+## Quick Start Guide
 
 The pico-vfs consists of a _block device_, a _file system_ and a _VFS layer_ that brings these together.
 Users are free to combine the storage device's block devices and the file systems deployed on them to configure the best file system for their embedded project.
@@ -126,10 +126,25 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 )
 ```
 
+## Related Projects and Inspirations
+
+There are multiple ways to add filesystems to the pico-sdk environment. Firstly, FatFs[^1] and littlefs[^2] are popular file system implementations. These filesystem implementations require writing drivers for the block devices used. They also each have their own Unix-like API, but with a distinctive dialect.
+While there are several solutions that cover the problem of writing drivers for the Raspberry Pi Pico, the carlk3[^6] implementation is probably the most popular.
+Especially, it includes DMA support to reduce CPU load and support for even faster SDIO[^7]. This would be the first choice for projects using SD cards and the FAT file system with pico-sdk.
+Among multi-filesystem implementations, Memotech-Bill[^8] implementation provides standard I/O support for pico-sdk using the newlib[^9] hook. The littlefs file system for on-board flash and FatFs for SD cards can be operated as an integrated file system. It is an ambitious project that goes beyond files and integrates character devices such as TTYs and UARTs.
+
+While referring to these existing projects, _pico-vfs_ aims to make the implementation of drivers and file systems for block devices separate and interchangeable, similar to MicroPython's VFS[^10] and ARM Mbed OS's Storage[^11].
+
 ## References
 
-[^1]: [FatFs - Generic FAT Filesystem Module](http://elm-chan.org/fsw/ff/)
+[^1]: [Generic FAT Filesystem Module](http://elm-chan.org/fsw/ff/)
 [^2]: [littlefs](https://github.com/littlefs-project/littlefs)
 [^3]: [pico-sdk](https://github.com/raspberrypi/pico-sdk)
 [^4]: [Getting started with Raspberry Pi Pico](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf)
 [^5]: [adafruit MicroSD card breakout board+](https://www.adafruit.com/product/254)
+[^6]: [C/C++ Library for SD Cards on the Pico](https://github.com/carlk3/no-OS-FatFS-SD-SDIO-SPI-RPi-Pico)
+[^7]: [SDIO/iSDIO](https://www.sdcard.org/developers/sd-standard-overview/sdio-isdio/)
+[^8]: [Standard File Input / Output for the Pico SDK](https://github.com/Memotech-Bill/pico-filesystem)
+[^9]: [Newlib is a C library intended for use on embedded systems](https://www.sourceware.org/newlib/)
+[^10]: [MicroPython Working with filesystems](https://docs.micropython.org/en/latest/reference/filesystem.html)
+[^11]: [ARM Mbed OS - Data storage concepts](https://os.mbed.com/docs/mbed-os/v6.16/apis/data-storage-concepts.html)
