@@ -81,7 +81,7 @@ Once built, the firmware `benchmark.uf2` will be generated. Simply drag and drop
 
 If an SD card is to be used, a separate circuit must be connected via SPI. As an example, the schematic using the Adafruit MicroSD card breakout board+[^5] is as follows
 
-(diagram)
+![adafruit-microsd](https://github.com/oyama/pico-vfs/assets/27072/b96e8493-4f3f-4d44-964d-8ada61745dff)
 
 The spi and pin used in the block device argument can be customised. The following pins are used in the demonstration.
 
