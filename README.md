@@ -135,6 +135,8 @@ Among multi-filesystem implementations, Memotech-Bill[^8] implementation provide
 
 While referring to these existing projects, _pico-vfs_ aims to make the implementation of drivers and file systems for block devices separate and interchangeable, similar to MicroPython's VFS[^10] and ARM Mbed OS's Storage[^11].
 
+![block-diagram](https://github.com/oyama/pico-vfs/assets/27072/ddc89f54-b011-40d2-b150-22495a4529c1)
+
 ## References
 
 [^1]: [Generic FAT Filesystem Module](http://elm-chan.org/fsw/ff/)
