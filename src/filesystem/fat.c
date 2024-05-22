@@ -11,7 +11,6 @@
 #include "filesystem/fat.h"
 #include "diskio.h"
 
-
 static const char FILESYSTEM_NAME[] = "FAT";
 static blockdevice_t *_ffs[FF_VOLUMES] = {0};
 
@@ -259,9 +258,8 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     }
 
     MKFS_PARM opt;
-    FRESULT res;
     opt.fmt = (FM_ANY | FM_SFD);
-    opt.n_fat = 0U;
+    opt.n_fat = 0;
     opt.align = 0U;
     opt.n_root = 0U;
     opt.au_size = 0; // (DWORD)cluster_size;
@@ -269,8 +267,7 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     filesystem_fat_context_t *context = fs->context;
     char id[3] = "0:";
     id[0] = '0' + context->id;
-    res = f_mkfs((const TCHAR *)id, &opt, NULL, FF_MAX_SS);
-    //res = f_mkfs(id, &opt, NULL, 512);
+    FRESULT res = f_mkfs((const TCHAR *)id, &opt, NULL, FF_MAX_SS);
     if (res != FR_OK) {
         fs->unmount(fs);
         return fat_error_remap(res);

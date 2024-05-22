@@ -31,6 +31,7 @@ static struct combination_map combination[NUM_COMBINATION];
 static void init_filesystem_combination(void) {
     blockdevice_t *flash1 = blockdevice_flash_create(1 * 1024 * 1024, 512 * 1024);
     blockdevice_t *flash2 = blockdevice_flash_create(1 * 1024 * 1024 + 512 * 1024, 0);
+#if !defined(WITHOUT_BLOCKDEVICE_SD)
     blockdevice_t *sd = blockdevice_sd_create(spi0,
                                               PICO_DEFAULT_SPI_RX_PIN,
                                               PICO_DEFAULT_SPI_TX_PIN,
@@ -38,7 +39,7 @@ static void init_filesystem_combination(void) {
                                               PICO_DEFAULT_SPI_CSN_PIN,
                                               24 * MHZ,
                                               true);
-
+#endif
     filesystem_t *fat1 = filesystem_fat_create();
     filesystem_t *fat2 = filesystem_fat_create();
     filesystem_t *littlefs1 = filesystem_littlefs_create(500, 16);

@@ -258,6 +258,7 @@ struct dirent *fs_readdir(fs_dir_t *dir) {
     filesystem_t *fs = dir_descriptors[dir->fd].filesystem;
     if (fs == NULL)
         return NULL;
+    memset(&ent, 0, sizeof(ent));
     int err = fs->dir_read(fs, _dir, &ent);
     if (err != 0) {
         return NULL;
