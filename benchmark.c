@@ -26,12 +26,23 @@ struct combination_map {
     filesystem_t *filesystem;
 };
 
+#if !defined(WITHOUT_BLOCKDEVICE_SD)
 #define NUM_COMBINATION    4
+#else
+#define NUM_COMBINATION    2
+#endif
+
 static struct combination_map combination[NUM_COMBINATION];
 
 
 static void init_filesystem_combination(void) {
     blockdevice_t *flash = blockdevice_flash_create(0.5 * 1024 * 1024, 0);
+    filesystem_t *fat = filesystem_fat_create();
+    filesystem_t *littlefs = filesystem_littlefs_create(500, 16);
+    combination[0] = (struct combination_map){.device = flash, .filesystem = fat};
+    combination[1] = (struct combination_map){.device = flash, .filesystem = littlefs};
+
+#if !defined(WITHOUT_BLOCKDEVICE_SD)
     blockdevice_t *sd = blockdevice_sd_create(spi0,
                                               PICO_DEFAULT_SPI_RX_PIN,
                                               PICO_DEFAULT_SPI_TX_PIN,
@@ -39,13 +50,9 @@ static void init_filesystem_combination(void) {
                                               PICO_DEFAULT_SPI_CSN_PIN,
                                               24 * MHZ,
                                               true);
-
-    filesystem_t *fat = filesystem_fat_create();
-    filesystem_t *littlefs = filesystem_littlefs_create(500, 16);
-    combination[0] = (struct combination_map){.device = flash, .filesystem = fat};
-    combination[1] = (struct combination_map){.device = flash, .filesystem = littlefs};
     combination[2] = (struct combination_map){.device = sd, .filesystem = fat};
     combination[3] = (struct combination_map){.device = sd, .filesystem = littlefs};
+#endif
 }
 
 static uint32_t xor_rand(uint32_t *seed) {

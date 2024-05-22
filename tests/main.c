@@ -3,18 +3,18 @@
 
 #define COLOR_GREEN(format)  ("\e[32m" format "\e[0m")
 
-extern void test_blockdevice_flash_filesystem_fat(void);
-extern void test_blockdevice_sd_filesystem_fat(void);
-extern void test_blockdevice_flash_filesystem_littlefs(void);
+extern void test_blockdevice();
+extern void test_filesystem();
+extern void test_copy_between_different_filesystems(void);
 
 int main(void) {
     stdio_init_all();
 
     printf("Start all tests\n");
 
-    test_blockdevice_flash_filesystem_fat();
-    test_blockdevice_sd_filesystem_fat();
-    test_blockdevice_flash_filesystem_littlefs();
+    test_blockdevice();
+    test_filesystem();
+    test_copy_between_different_filesystems();
 
     printf(COLOR_GREEN("All tests are ok\n"));
 }

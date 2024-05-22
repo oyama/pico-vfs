@@ -4,11 +4,18 @@
  */
 #pragma once
 
+#include <errno.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "blockdevice/blockdevice.h"
 
 #define PATH_MAX   256
+
+typedef enum {
+    FILESYSTEM_TYPE_FAT,
+    FILESYSTEM_TYPE_LITTLEFS,
+} filesystem_type_t;
 
 enum {
     DT_UNKNOWN = 0,
@@ -32,6 +39,10 @@ struct dirent {
 };
 
 typedef struct filesystem {
+    filesystem_type_t type;
+    const char *name;
+    void *context;
+
     int (*mount)(struct filesystem *fs, blockdevice_t *device);
     int (*unmount)(struct filesystem *fs);
     int (*format)(struct filesystem *fs, blockdevice_t *device);
@@ -53,8 +64,5 @@ typedef struct filesystem {
 
     int (*dir_open)(struct filesystem *fs, fs_dir_t *dir, const char *path);
     int (*dir_close)(struct filesystem *fs, fs_dir_t *dir);
-    ssize_t (*dir_read)(struct filesystem *fs, fs_dir_t *dir, struct dirent *ent);
-
-    void *context;
-    const char *name;
+    int (*dir_read)(struct filesystem *fs, fs_dir_t *dir, struct dirent *ent);
 } filesystem_t;

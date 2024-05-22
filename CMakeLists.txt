@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.13...3.27)
 
+option(WITHOUT_BLOCKDEVICE_SD "without SD block device in demo and tests")
+
 include(vendor/pico_sdk_import.cmake)
 set(FAMILY rp2040)
 set(CMAKE_C_STANDARD 11)
@@ -62,7 +64,7 @@ target_include_directories(filesystem_vfs INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
 
-
+# Benchmark demo
 add_executable(benchmark EXCLUDE_FROM_ALL benchmark.c)
 target_include_directories(benchmark
   PRIVATE
@@ -79,27 +81,11 @@ target_link_libraries(benchmark PRIVATE
   filesystem_vfs
 )
 target_link_options(benchmark PRIVATE -Wl,--print-memory-usage)
+if(WITHOUT_BLOCKDEVICE_SD)
+  target_compile_definitions(benchmark PRIVATE WITHOUT_BLOCKDEVICE_SD=1)
+endif()
 pico_enable_stdio_usb(benchmark 1)
 pico_add_extra_outputs(benchmark)
-
-
-
-add_executable(demo EXCLUDE_FROM_ALL main.c)
-target_include_directories(demo
-  PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}
-  ${CMAKE_CURRENT_LIST_DIR}/include
-)
-target_link_libraries(demo PRIVATE
-  pico_stdlib
-  blockdevice_sd
-  blockdevice_flash
-  filesystem_fat
-  filesystem_littlefs
-  filesystem_vfs
-)
-pico_enable_stdio_usb(demo 1)
-pico_add_extra_outputs(demo)
 
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)

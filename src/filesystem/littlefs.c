@@ -294,7 +294,7 @@ static int dir_close(filesystem_t *fs, fs_dir_t *dir) {
     return _error_remap(err);
 }
 
-static ssize_t dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
+static int dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_dir_t *d = dir->context;
     struct lfs_info info;
@@ -302,6 +302,9 @@ static ssize_t dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
     if (res == 1) {
         ent->d_type = _type_remap(info.type);
         strcpy(ent->d_name, info.name);
+        return _error_remap(LFS_ERR_OK);
+    } else if (res == 0) {
+        return _error_remap(LFS_ERR_NOENT);
     }
     return _error_remap(res);
 }
@@ -315,6 +318,8 @@ filesystem_t *filesystem_littlefs_create(uint32_t block_cycles,
         return NULL;
     }
 
+    fs->type = FILESYSTEM_TYPE_LITTLEFS;
+    fs->name = FILESYSTEM_NAME;
     fs->mount = mount;
     fs->unmount = unmount;
     fs->format = format;
@@ -334,7 +339,6 @@ filesystem_t *filesystem_littlefs_create(uint32_t block_cycles,
     fs->dir_open = dir_open;
     fs->dir_close = dir_close;
     fs->dir_read = dir_read;
-    fs->name = FILESYSTEM_NAME;
 
     filesystem_littlefs_context_t *context = calloc(1, sizeof(filesystem_littlefs_context_t));
     if (context == NULL) {

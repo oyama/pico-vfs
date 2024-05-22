@@ -81,6 +81,12 @@ int fs_unmount(const char *path) {
     if (mp == NULL) {
         return -ENOENT;
     }
+    filesystem_t *fs = mp->filesystem;
+    int err = fs->unmount(fs);
+    if (err) {
+        return err;
+    }
+
     mp->filesystem = NULL;
     free((char *)mp->dir);
     return 0;
@@ -252,7 +258,7 @@ struct dirent *fs_readdir(fs_dir_t *dir) {
     filesystem_t *fs = dir_descriptors[dir->fd].filesystem;
     if (fs == NULL)
         return NULL;
-    ssize_t err = fs->dir_read(fs, _dir, &ent);
+    int err = fs->dir_read(fs, _dir, &ent);
     if (err != 0) {
         return NULL;
     }

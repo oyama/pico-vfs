@@ -65,6 +65,7 @@ Block devices and file systems are integrated into a UNIX-like API by VFS layer.
 
 ## Demonstration
 
+For demonstration purposes, benchmark test firmware for combined block devices and file systems is included.
 The pico-sdk[^3] build environment is required to build the demonstration, see  _Getting started with Raspberry Pi Pico_[^4] to prepare the toolchain for your platform. This project contains a _git submodule_. When cloning, the `--recursive` option must be given or a separate `git submodule update` must be performed.
 
 ```bash
@@ -76,6 +77,13 @@ make benchmark
 ```
 The above examples specify the environment variable `PICO_SDK_FETCH_FROM_GIT` to download the pico-sdk from GitHub. If you want to specify a locally deployed pico-sdk, you should set it with the `PICO_SDK_PATH` environment variable.
 Once built, the firmware `benchmark.uf2` will be generated. Simply drag and drop it onto your device to install.
+
+If no SD card device is connected, the `WITHOUT_BLOCKDEVICE_SD` option can be specified to skip the SD card manipulation procedure from the demo and unit tests.
+
+```bash
+PICO_SDK_FETCH_FROM_GIT=1 cmake .. -DWITHOUT_BLOCKDEVICE_SD=YES
+make benchmark
+```
 
 ### Circuit Diagram
 

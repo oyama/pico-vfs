@@ -98,7 +98,5 @@ blockdevice_t *blockdevice_flash_create(uint32_t start, size_t length) {
 
 void blockdevice_flash_free(blockdevice_t *device) {
     free(device->config);
-    device->config = NULL;
     free(device);
-    device = NULL;
 }

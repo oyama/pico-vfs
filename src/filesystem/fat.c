@@ -2,8 +2,6 @@
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include <errno.h>
-#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +12,7 @@
 #include "diskio.h"
 
 
-static const char FILESYSTEM_NAME[] = "fat";
+static const char FILESYSTEM_NAME[] = "FAT";
 static blockdevice_t *_ffs[FF_VOLUMES] = {0};
 
 static int fat_error_remap(FRESULT res) {
@@ -68,7 +66,7 @@ static inline void debug_if(int condition, const char *format, ...) {
     if (condition) {
         va_list args;
         va_start(args, format);
-        vfprintf(stderr, format, args);
+        vprintf(format, args);
         va_end(args);
     }
 }
@@ -184,7 +182,7 @@ static int mount(filesystem_t *fs, blockdevice_t *device) {
     char _fsid[3] = {0};
 
     for (size_t i = 0; i < FF_VOLUMES; i++) {
-        if (! _ffs[i]) {
+        if (_ffs[i] == NULL) {
             context->id = i;
             _ffs[i] = device;
             _fsid[0] = '0' + i;
@@ -514,23 +512,23 @@ static int dir_close(filesystem_t *fs, fs_dir_t *dir) {
     return fat_error_remap(res);
 }
 
-static ssize_t dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
+static int dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
     (void)fs;
-    FATFS_DIR *dh = (FATFS_DIR *)&dir;
-    FILINFO finfo;
+    FATFS_DIR *dh = (FATFS_DIR *)dir->context;
+    FILINFO finfo = {0};
 
     FRESULT res = f_readdir(dh, &finfo);
     if (res != FR_OK) {
         return fat_error_remap(res);
     } else if (finfo.fname[0] == 0) {
-        return 0;
+        return 1;  // FIXME: Should return a negative error code
     }
     ent->d_type = (finfo.fattrib & AM_DIR) ? DT_DIR : DT_REG;
     if (ent->d_name[0] == 0) {
         strncpy(ent->d_name, finfo.fname, FF_LFN_BUF);
         ent->d_name[FF_LFN_BUF] = '\0';
     }
-    return 1;
+    return 0;
 }
 
 
@@ -540,6 +538,8 @@ filesystem_t *filesystem_fat_create() {
         fprintf(stderr, "filesystem_fat_create: Out of memory\n");
         return NULL;
     }
+    fs->type = FILESYSTEM_TYPE_FAT;
+    fs->name = FILESYSTEM_NAME;
     fs->mount = mount;
     fs->unmount = unmount;
     fs->format = format;
@@ -559,7 +559,6 @@ filesystem_t *filesystem_fat_create() {
     fs->dir_open = dir_open;
     fs->dir_close = dir_close;
     fs->dir_read = dir_read;
-    fs->name = FILESYSTEM_NAME;
     filesystem_fat_context_t *context = calloc(1, sizeof(filesystem_fat_context_t));
     if (context == NULL) {
         fprintf(stderr, "filesystem_fat_create: Out of memory\n");
