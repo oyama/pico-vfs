@@ -9,9 +9,6 @@ add_executable(tests
 if(WITHOUT_BLOCKDEVICE_SD)
   target_compile_definitions(tests PRIVATE WITHOUT_BLOCKDEVICE_SD=1)
 endif()
-target_include_directories(tests PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../include
-)
 target_compile_options(tests PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(tests PRIVATE
   pico_stdlib

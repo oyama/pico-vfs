@@ -3,19 +3,18 @@
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include <pico/stdlib.h>
-#include <stdio.h>
 #include <bsp/board.h>
 #include <hardware/adc.h>
 #include <hardware/gpio.h>
-#include <hardware/sync.h>
 #include <hardware/structs/ioqspi.h>
+#include <hardware/sync.h>
+#include <pico/stdlib.h>
+#include <stdio.h>
+#include <tusb.h>
 #include "blockdevice/flash.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/vfs.h"
-
-#include <tusb.h>
 
 #define TEMPERATURE_UNITS 'C'
 #define USBCTRL_REG    ((uint32_t *)(USBCTRL_REGS_BASE + 0x50))
@@ -82,18 +81,6 @@ static bool filesystem_init(void) {
         printf("fs_mount error=%d\n", err);
         return false;
     }
-/*
-    err = fs_mount("/export", fat, flash2);
-    if (err != 0) {
-        printf("fs_mount error=%d\n", err);
-        return false;
-    }
-    err = fs_unmount("/export");
-    if (err != 0) {
-        printf("fs_unmount error=%d\n", err);
-        return false;
-    }
-*/
     return true;
 }
 

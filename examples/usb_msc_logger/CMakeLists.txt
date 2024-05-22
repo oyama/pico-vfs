@@ -4,16 +4,12 @@ add_executable(logger
   usb_msc.c
   usb_descriptors.c
 )
-target_include_directories(logger
-  PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}
-)
+target_include_directories(logger PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_compile_options(logger PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(logger PRIVATE
   pico_stdlib
   hardware_adc
   blockdevice_flash
-  blockdevice_sd
   filesystem_fat
   filesystem_littlefs
   filesystem_vfs

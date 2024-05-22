@@ -1,10 +1,5 @@
 # Benchmark demo
 add_executable(benchmark benchmark.c)
-target_include_directories(benchmark
-  PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}/../../
-  ${CMAKE_CURRENT_LIST_DIR}/../../include
-)
 target_compile_options(benchmark PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(benchmark PRIVATE
   pico_stdlib
