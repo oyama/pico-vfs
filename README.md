@@ -11,8 +11,9 @@ Users are free to combine the storage device's block devices and the file system
 
 ```c
 // Block Device creation: Create a block device for the onboard flash memory.
-#define  FLASH_START_AT  (0.5 * 1024 * 1024)
-blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, 0);
+#define FLASH_START_AT           (0.5 * 1024 * 1024)
+#define FLASH_SIZE_USE_ALL_REST  0
+blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_SIZE_USE_ALL_REST);
 
 // Block Device creation: Create a block device for an SD card connected via SPI.
 blockdevice_t *sd = blockdevice_sd_create(spi0,
@@ -27,7 +28,9 @@ blockdevice_t *sd = blockdevice_sd_create(spi0,
 filesystem_t *fat = filesystem_fat_create();
 
 // File System creation: Create a LittleFS file system instance with specific parameters.
-filesystem_t *littlefs = filesystem_littlefs_create(500, 16);
+#define LFS_BLOCK_CYCLES    500
+#define LFS_LOOKAHEAD_SIZE  16
+filesystem_t *littlefs = filesystem_littlefs_create(LFS_BLOCK_CYCLES, LFS_LOOKAHEAD_SIZE);
 
 // Mounting: Mount the LittleFS on the onboard flash memory at root directory.
 fs_mount("/", littlefs, flash);
