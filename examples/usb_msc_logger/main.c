@@ -20,7 +20,7 @@
 #define USBCTRL_REG    ((uint32_t *)(USBCTRL_REGS_BASE + 0x50))
 
 bool filesystem_is_exported = false;
-static bool enable_logging_task = false;
+static bool enable_logging_task = true;
 static blockdevice_t *flash1;
 blockdevice_t *flash2;
 static filesystem_t *littlefs;
@@ -125,7 +125,6 @@ static void export_filesystem(void) {
 }
 
 static void logging_task(void) {
-
     if (!enable_logging_task)
         return;
 
@@ -155,22 +154,30 @@ static void logging_task(void) {
     last_measure = now;
 }
 
+static bool is_usb_connected(void) {
+    return tud_ready();
+}
+
 static void filesystem_management_task(void) {
     static bool last_status = false;
 
-     bool button = bootsel_button_get();
-     if (last_status != button) {
-         if (button) {
-             printf("USB disconnected\n");
-             filesystem_is_exported = false;
-             enable_logging_task = true;
-         } else {
+    bool usb = is_usb_connected();
+    // Override USB connection status as long as the BOOTSEL button is pressed.
+    if (bootsel_button_get())
+        usb = false;
+
+    if (last_status != usb) {
+        if (usb) {
              enable_logging_task = false;
              printf("USB connected\n");
              export_filesystem();
              filesystem_is_exported = true;
+         } else {
+             printf("USB disconnected\n");
+             filesystem_is_exported = false;
+             enable_logging_task = true;
          }
-         last_status = button;
+         last_status = usb;
      }
 }
 
