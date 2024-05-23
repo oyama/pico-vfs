@@ -21,10 +21,10 @@ extern "C" {
  * Create a block device object for an SPI-connected SD or MMC card.
  *
  * @param spi_inst SPI instance, as defined in the pico-sdk hardware_spi library
- * @param mosi SPI Master Out Slave In(TX) pin number
- * @param miso SPI Master In Slave Out(RX) pin number
- * @param sckl SPI clock pin number
- * @param cs SPI Chip select pin number
+ * @param mosi SPI Master Out Slave In(TX) pin
+ * @param miso SPI Master In Slave Out(RX) pin
+ * @param sckl SPI clock pin
+ * @param cs SPI Chip select pin
  * @param hz SPI clock frequency (Hz)
  * @param enable_crc Boolean value to enable CRC on read/write
  * @return Block device object. Returnes NULL in case of failure.

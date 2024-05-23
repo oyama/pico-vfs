@@ -133,12 +133,12 @@ void test_blockdevice(void) {
 #if !defined(WITHOUT_BLOCKDEVICE_SD)
     printf("Block device SPI SD card:\n");
     blockdevice_t *sd = blockdevice_sd_create(spi0,
-                                              PICO_DEFAULT_SPI_RX_PIN,
                                               PICO_DEFAULT_SPI_TX_PIN,
+                                              PICO_DEFAULT_SPI_RX_PIN,
                                               PICO_DEFAULT_SPI_SCK_PIN,
                                               PICO_DEFAULT_SPI_CSN_PIN,
-                                              24 * MHZ,
-                                              true);
+                                              10 * MHZ,
+                                              false);
     assert(sd != NULL);
     setup(sd);
 

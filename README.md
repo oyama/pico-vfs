@@ -16,8 +16,8 @@ blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, 0);
 
 // Block Device creation: Create a block device for an SD card connected via SPI.
 blockdevice_t *sd = blockdevice_sd_create(spi0,
-                                          PICO_DEFAULT_SPI_RX_PIN,
                                           PICO_DEFAULT_SPI_TX_PIN,
+                                          PICO_DEFAULT_SPI_RX_PIN,
                                           PICO_DEFAULT_SPI_SCK_PIN,
                                           PICO_DEFAULT_SPI_CSN_PIN,
                                           24 * MHZ,
@@ -97,12 +97,12 @@ If an SD card is to be used, a separate circuit must be connected via SPI. As an
 
 The spi and pin used in the block device argument can be customised. The following pins are used in the demonstration.
 
-| pin | SPI      | description             |
-|-----|----------|-------------------------|
-| 24  | SPI0 SCK | SPI clock               |
-| 25  | SPI0 TX  | SPI Master Out Slave In |
-| 21  | SPI0 RX  | SPI Master In Slave Out |
-| 22  | SPI0 CSn | SPI Chip select         |
+| Pin  | PCB pin | Usage    | description             |
+|------|---------|----------|-------------------------|
+| GP18 | 24      | SPI0 SCK | SPI clock               |
+| GP19 | 25      | SPI0 TX  | SPI Master Out Slave In |
+| GP16 | 21      | SPI0 RX  | SPI Master In Slave Out |
+| GP17 | 22      | SPI0 CSn | SPI Chip select         |
 
 ## Integration into project
 

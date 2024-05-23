@@ -45,8 +45,8 @@ static void init_filesystem_combination(void) {
 
 #if !defined(WITHOUT_BLOCKDEVICE_SD)
     blockdevice_t *sd = blockdevice_sd_create(spi0,
-                                              PICO_DEFAULT_SPI_RX_PIN,
                                               PICO_DEFAULT_SPI_TX_PIN,
+                                              PICO_DEFAULT_SPI_RX_PIN,
                                               PICO_DEFAULT_SPI_SCK_PIN,
                                               PICO_DEFAULT_SPI_CSN_PIN,
                                               24 * MHZ,
