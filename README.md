@@ -39,10 +39,12 @@ fs_mount("/sd", fat, sd);
 int fd = fs_open("/sd/README.TXT", O_WRONLY|O_CREAT);
 
 char buffer[] = "Hello World!";
-fs_write(fd, buffer, sizeof(buffer));
+fs_write(fd, buffer, strlen(buffer));
 
 fs_close(fd);
 ```
+The `benchmark` included in the examples show file copies on all combinations of two different block devices and two different file systems. Similarly, the `logger` included in examples uses the onboard flash memory as two block devices, each formatted and used with a different file system.
+
 In addition, the individual block devices and file systems are available as separate INTERFACE libraries, so that the file system can be configured with the minimum required footprint.
 
 ## Block device
@@ -65,9 +67,10 @@ Block devices and file systems are integrated into a UNIX-like API by VFS layer.
 
 - [include/filesystem/vfs.h](include/filesystem/vfs.h): Virtual file system layer
 
-## Demonstration
+## Examples
 
-For demonstration purposes, benchmark test firmware for combined block devices and file systems is included.
+Examples include benchmark test firmware for combinations of heterogeneous block devices and heterogeneous file systems, and logger firmware that splits the on-board flash memory in two and uses it with different file systems.
+
 The pico-sdk[^3] build environment is required to build the demonstration, see  _Getting started with Raspberry Pi Pico_[^4] to prepare the toolchain for your platform. This project contains a _git submodule_. When cloning, the `--recursive` option must be given or a separate `git submodule update` must be performed.
 
 ```bash
@@ -75,16 +78,15 @@ git clone --recursive https://github.com/oyama/pico-vfs.git
 cd pico-vfs
 mkdir build; cd build
 PICO_SDK_FETCH_FROM_GIT=1 cmake ..
-make benchmark
+make benchmark logger
 ```
 The above examples specify the environment variable `PICO_SDK_FETCH_FROM_GIT` to download the pico-sdk from GitHub. If you want to specify a locally deployed pico-sdk, you should set it with the `PICO_SDK_PATH` environment variable.
-Once built, the firmware `benchmark.uf2` will be generated. Simply drag and drop it onto your device to install.
+The build generates the firmware `examples/benchmark/benchmark.uf2` and `examples/usb_msc_logger/logger.uf2`. Both can be installed by simply dragging and dropping them onto a Raspberry Pi Pico running in BOOTSEL mode.
 
 If no SD card device is connected, the `WITHOUT_BLOCKDEVICE_SD` option can be specified to skip the SD card manipulation procedure from the demo and unit tests.
 
 ```bash
 PICO_SDK_FETCH_FROM_GIT=1 cmake .. -DWITHOUT_BLOCKDEVICE_SD=YES
-make benchmark
 ```
 
 ### Circuit Diagram
@@ -135,6 +137,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
   filesystem_littlefs
 )
 ```
+
+Of course, more-bare-metal use, where only block devices are used, is also possible.
 
 ## Related Projects and Inspirations
 
