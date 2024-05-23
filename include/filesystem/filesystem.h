@@ -4,6 +4,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -23,6 +27,11 @@ enum {
     DT_REG     = 8,
 };
 
+struct dirent {
+    uint8_t d_type;
+    char d_name[255 + 1];
+};
+
 typedef struct {
     int fd;
     void *context;
@@ -31,12 +40,8 @@ typedef struct {
 typedef struct {
     int fd;
     void *context;
+    struct dirent current;
 } fs_dir_t;
-
-struct dirent {
-    uint8_t d_type;
-    char d_name[255 + 1];
-};
 
 typedef struct filesystem {
     filesystem_type_t type;
@@ -66,3 +71,7 @@ typedef struct filesystem {
     int (*dir_close)(struct filesystem *fs, fs_dir_t *dir);
     int (*dir_read)(struct filesystem *fs, fs_dir_t *dir, struct dirent *ent);
 } filesystem_t;
+
+#ifdef __cplusplus
+}
+#endif

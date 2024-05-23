@@ -10,6 +10,11 @@
 #include "blockdevice/flash.h"
 
 
+typedef struct {
+    uint32_t start;
+    size_t length;
+} blockdevice_flash_config_t;
+
 static const char DEVICE_NAME[] = "flash";
 
 static size_t flash_target_offset(blockdevice_t *device) {

@@ -2,8 +2,23 @@
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "filesystem/littlefs.h"
 #include <errno.h>
+#include <fcntl.h>
+#include "lfs.h"
+#include "blockdevice/blockdevice.h"
+#include "filesystem/littlefs.h"
+
+
+typedef struct {
+   lfs_file_t file;
+} littlefs_file_t;
+
+typedef struct {
+    lfs_t littlefs;
+    struct lfs_config config;
+    int id;
+} filesystem_littlefs_context_t;
+
 
 static const char FILESYSTEM_NAME[] = "littlefs";
 

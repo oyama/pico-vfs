@@ -1,5 +1,5 @@
 # Benchmark demo
-add_executable(benchmark benchmark.c)
+add_executable(benchmark main.c)
 target_compile_options(benchmark PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(benchmark PRIVATE
   pico_stdlib

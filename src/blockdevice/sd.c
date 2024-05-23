@@ -7,7 +7,28 @@
  * [ARM Mbed OS](https://github.com/ARMmbed/mbed-os/blob/master/storage/blockdevice/COMPONENT_SD/source/SDBlockDevice.cpp);
  * ARM Embed OS is licensed under the Apache 2.0 licence.
  */
+#include <errno.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <inttypes.h>
+#include <hardware/clocks.h>
+#include <pico/stdlib.h>
 #include "blockdevice/sd.h"
+
+typedef struct {
+    spi_inst_t *spi_inst;
+    uint8_t mosi; // PICO_DEFAULT_SPI_TX_PIN  pin 19
+    uint8_t miso; // PICO_DEFAULT_SPI_RX_PIN  pin 16
+    uint8_t sclk; // PICO_DEFAULT_SPI_SCK_PIN pin 18
+    uint8_t cs;   // PICO_DEFAULT_SPI_CSN_PIN pin 17
+    uint32_t hz;  // CONF_SD_TRX_FREQUENCY
+    bool enable_crc;
+    uint8_t card_type;
+    bool is_initialized;
+    size_t block_size;
+    size_t erase_size;
+    size_t total_sectors;
+} blockdevice_sd_config_t;
 
 #ifndef CONF_SD_CMD_TIMEOUT
 #define CONF_SD_CMD_TIMEOUT                 5000   /*!< Timeout in ms for response */

@@ -8,12 +8,6 @@ Format the on-board flash memory in two separate file systems, one for internal 
 - For export: FAT
 
 When a USB connection is detected, the sensor log is copied from littlefs to FAT before the MSC operation starts.
-Battery power is required to operate with the USB disconnected, but in this demonstration, the bootcell button is substituted as a 'battery-powered state' while it is pressed.
+Battery power is required to operate with the USB disconnected, but in this demonstration, the bootcell button is substituted as a 'USB dis-connected state' while it is pressed.
 
 In this example it is one-way for export only, but it is also possible to import files from FAT to littlefs when the USB is disconnected.
-
-## Detection of USB connections
-
-See
-https://github.com/oyama/pico-w-usb-failures
-

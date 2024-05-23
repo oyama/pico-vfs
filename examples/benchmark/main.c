@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include <fcntl.h>
+#include <hardware/clocks.h>
 #include <pico/stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -49,7 +50,7 @@ static void init_filesystem_combination(void) {
                                               PICO_DEFAULT_SPI_SCK_PIN,
                                               PICO_DEFAULT_SPI_CSN_PIN,
                                               24 * MHZ,
-                                              true);
+                                              false);
     combination[2] = (struct combination_map){.device = sd, .filesystem = fat};
     combination[3] = (struct combination_map){.device = sd, .filesystem = littlefs};
 #endif

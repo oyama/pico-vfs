@@ -8,8 +8,21 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "blockdevice/blockdevice.h"
 #include "filesystem/fat.h"
+#include "pico_vfs_conf.h"
+#include "ff.h"
 #include "diskio.h"
+
+
+typedef struct {
+    FIL file;
+} fat_file_t;
+
+typedef struct {
+    FATFS fatfs;
+    int id;
+} filesystem_fat_context_t;
 
 static const char FILESYSTEM_NAME[] = "FAT";
 static blockdevice_t *_ffs[FF_VOLUMES] = {0};
@@ -518,7 +531,7 @@ static int dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
     if (res != FR_OK) {
         return fat_error_remap(res);
     } else if (finfo.fname[0] == 0) {
-        return 1;  // FIXME: Should return a negative error code
+        return -ENOENT;
     }
     ent->d_type = (finfo.fattrib & AM_DIR) ? DT_DIR : DT_REG;
     if (ent->d_name[0] == 0) {

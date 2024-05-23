@@ -4,6 +4,10 @@
  */
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -28,3 +32,7 @@ typedef struct blockdevice {
     const char *name;
     void *config;
 } blockdevice_t;
+
+#ifdef __cplusplus
+}
+#endif

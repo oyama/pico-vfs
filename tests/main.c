@@ -5,6 +5,7 @@
 
 extern void test_blockdevice();
 extern void test_filesystem();
+extern void test_vfs();
 extern void test_copy_between_different_filesystems(void);
 
 int main(void) {
@@ -14,6 +15,7 @@ int main(void) {
 
     test_blockdevice();
     test_filesystem();
+    test_vfs();
     test_copy_between_different_filesystems();
 
     printf(COLOR_GREEN("All tests are ok\n"));

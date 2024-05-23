@@ -1,6 +1,8 @@
 # Thin virtual file system for Raspberry Pi Pico
 
-__pico-vfs__ adds a Unix-like, thin virtual file system (VFS) layer to the Raspberry Pi Pico. Any __block device__ and __file system__ can be combined into a single virtual file system, starting from root `/`.
+__pico-vfs__ adds a Unix-like, lightweight virtual file system (VFS) layer to the Raspberry Pi Pico, providing flexible, easy-to-use, and lightweight storage capabilities. This framework allows for the free combination of various __block devices__ and __file systems__ to deliver a unified file system starting from the root `/`.
+
+pico-vfs is designed with resource-constrained environments in mind, making it easy to customize and readily adaptable to specific project needs.
 
 ## Quick Start Guide
 

@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <hardware/clocks.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>

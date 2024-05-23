@@ -18,6 +18,7 @@ target_sources(blockdevice_sd INTERFACE
 target_include_directories(blockdevice_sd INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
+target_compile_options(blockdevice_sd INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_sd INTERFACE hardware_spi)
 
 # Onboard-Flash blockdevice library
@@ -28,6 +29,7 @@ target_sources(blockdevice_flash INTERFACE
 target_include_directories(blockdevice_flash INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
+target_compile_options(blockdevice_flash INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_flash INTERFACE
   hardware_flash
   hardware_sync
@@ -46,6 +48,7 @@ target_include_directories(filesystem_fat INTERFACE
   include/filesystem/ChaN
   vendor/ff15/source
 )
+target_compile_options(filesystem_fat INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 
 # littlefs filesystem library
 add_library(filesystem_littlefs INTERFACE)
@@ -63,6 +66,7 @@ target_sources(filesystem_vfs INTERFACE src/filesystem/vfs.c)
 target_include_directories(filesystem_vfs INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
+target_compile_options(filesystem_vfs INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 
 add_subdirectory(examples/benchmark EXCLUDE_FROM_ALL)
 add_subdirectory(examples/usb_msc_logger EXCLUDE_FROM_ALL)

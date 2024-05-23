@@ -13,7 +13,7 @@ target_link_libraries(logger PRIVATE
   filesystem_fat
   filesystem_littlefs
   filesystem_vfs
-  tinyusb_additions
+#  tinyusb_additions
   tinyusb_board
   tinyusb_device
 )

@@ -355,7 +355,6 @@ static void test_api_stat(filesystem_t *fs) {
     printf(COLOR_GREEN("ok\n"));
 }
 
-
 void test_filesystem(void) {
     printf("File system FAT:\n");
 

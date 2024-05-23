@@ -2,10 +2,10 @@
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
-#include "filesystem/vfs.h"
 #include <string.h>
 #include <stdio.h>
 #include <sys/errno.h>
+#include "filesystem/vfs.h"
 
 
 typedef struct {
@@ -253,17 +253,21 @@ int fs_closedir(fs_dir_t *dir) {
 }
 
 struct dirent *fs_readdir(fs_dir_t *dir) {
-    static struct dirent ent = {0};
     fs_dir_t *_dir = &dir_descriptors[dir->fd].dir;
     filesystem_t *fs = dir_descriptors[dir->fd].filesystem;
     if (fs == NULL)
         return NULL;
-    memset(&ent, 0, sizeof(ent));
-    int err = fs->dir_read(fs, _dir, &ent);
-    if (err != 0) {
+    memset(&_dir->current, 0, sizeof(_dir->current));
+    int err = fs->dir_read(fs, _dir, &_dir->current);
+    if (err == 0) {
+        return &_dir->current;
+    } else if (err == -ENOENT) {
+        memset(&_dir->current, 0, sizeof(_dir->current));
+        return NULL;
+    } else {
+        memset(&_dir->current, 0, sizeof(_dir->current));
         return NULL;
     }
-    return &ent;
 }
 
 char *fs_strerror(int error) {

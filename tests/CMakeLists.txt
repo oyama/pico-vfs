@@ -4,6 +4,7 @@ add_executable(tests
   main.c
   test_blockdevice.c
   test_filesystem.c
+  test_vfs.c
   test_copy_between_different_filesystems.c
 )
 if(WITHOUT_BLOCKDEVICE_SD)
