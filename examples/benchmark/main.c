@@ -71,9 +71,9 @@ static void benchmark_write(void) {
     printf("Write ");
     uint64_t start_at = get_absolute_time();
 
-    int fd = fs_open("/benchmark", O_WRONLY|O_CREAT);
+    int fd = open("/benchmark", O_WRONLY|O_CREAT);
     if (fd < 0) {
-        printf("fs_open error=%d\n", fd);
+        printf("open error=%d\n", fd);
         return;
     }
 
@@ -87,18 +87,18 @@ static void benchmark_write(void) {
         for (size_t j = 0; j < (chunk / sizeof(uint32_t)); j++) {
             b[j] = xor_rand_32bit(&counter);
         }
-        ssize_t write_size = fs_write(fd, buffer, chunk);
+        ssize_t write_size = write(fd, buffer, chunk);
         if (write_size < 0) {
-            printf("fs_write: error=%d\n", write_size);
+            printf("write: error=%d\n", write_size);
             return;
         }
         printf(".");
         remind = remind - write_size;
     }
 
-    int err = fs_close(fd);
+    int err = close(fd);
     if (err != 0) {
-        printf("fs_close error=%d\n", err);
+        printf("close error=%d\n", err);
         return;
     }
 
@@ -110,9 +110,9 @@ static void benchmark_read(void) {
     printf("Read  ");
     uint64_t start_at = get_absolute_time();
 
-    int fd = fs_open("/benchmark", O_RDONLY);
+    int fd = open("/benchmark", O_RDONLY);
     if (fd < 0) {
-        printf("fs_open error=%d\n", fd);
+        printf("open error=%d\n", fd);
         return;
     }
 
@@ -122,9 +122,9 @@ static void benchmark_read(void) {
     size_t remind = BENCHMARK_SIZE;
     while (remind > 0) {
         size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
-        ssize_t read_size = fs_read(fd, buffer, chunk);
+        ssize_t read_size = read(fd, buffer, chunk);
         if (read_size <= 0) {
-            printf("fs_read error=%d\n", read_size);
+            printf("read error=%d\n", read_size);
             return;
         }
         uint32_t *b = (uint32_t *)buffer;
@@ -139,9 +139,9 @@ static void benchmark_read(void) {
         remind = remind - read_size;
     }
 
-    int err = fs_close(fd);
+    int err = close(fd);
     if (err != 0) {
-        printf("fs_close error=%d\n", err);
+        printf("close error=%d\n", err);
         return;
     }
 

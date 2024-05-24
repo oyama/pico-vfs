@@ -39,12 +39,12 @@ fs_mount("/", littlefs, flash);
 fs_mount("/sd", fat, sd);
 
 // File Operations: Open a file '/sd/README.TXT' on the SD card for writing. Create if not exists.
-int fd = fs_open("/sd/README.TXT", O_WRONLY|O_CREAT);
+int fd = open("/sd/README.TXT", O_WRONLY|O_CREAT);
 
 char buffer[] = "Hello World!";
-fs_write(fd, buffer, strlen(buffer));
+write(fd, buffer, strlen(buffer));
 
-fs_close(fd);
+close(fd);
 ```
 The `benchmark` included in the examples show file copies on all combinations of two different block devices and two different file systems. Similarly, the `logger` included in examples uses the onboard flash memory as two block devices, each formatted and used with a different file system.
 
@@ -66,7 +66,7 @@ The file system is a struct implementation `filesystem_t`. This data types conta
 
 ## VFS
 
-Block devices and file systems are integrated into a UNIX-like API by VFS layer. Users can `fs_format()` or `fs_mount()` a combination of block devices and file systems, which can then be `fs_open()` for further `fs_read()` and `fs_write()`.
+Block devices and file systems are integrated into a UNIX-like API by VFS layer. Users can `fs_format()` or `fs_mount()` a combination of block devices and file systems, which can then be `open()` for further `read()` and `write()`.
 
 - [include/filesystem/vfs.h](include/filesystem/vfs.h): Virtual file system layer
 

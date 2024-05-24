@@ -83,7 +83,7 @@ static void test_printf(const char *format, ...) {
 
 static void test_write(const char *path) {
 
-    int fd = fs_open(path, O_WRONLY|O_CREAT);
+    int fd = open(path, O_WRONLY|O_CREAT);
     assert(fd >= 0);
 
     uint8_t buffer[1024*64] = {0};
@@ -92,45 +92,45 @@ static void test_write(const char *path) {
         size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
         for (size_t i = 0; i < chunk; i++)
             buffer[i] = rand() & 0xFF;
-        ssize_t write_size = fs_write(fd, buffer, chunk);
+        ssize_t write_size = write(fd, buffer, chunk);
         assert(write_size > 0);
 
         remind = remind - write_size;
     }
-    int err = fs_close(fd);
+    int err = close(fd);
     assert(err == 0);
 }
 
 static void test_copy(const char *source, const char *dist) {
-    int fd_src = fs_open(source, O_RDONLY);
+    int fd_src = open(source, O_RDONLY);
     assert(fd_src >= 0);
-    int fd_dist = fs_open(dist, O_WRONLY|O_CREAT);
+    int fd_dist = open(dist, O_WRONLY|O_CREAT);
     assert(fd_dist >= 0);
     assert(fd_src != fd_dist);
 
     uint8_t buffer[1024*64] = {0};
     while (true) {
-        ssize_t read_size = fs_read(fd_src, buffer, sizeof(buffer));
+        ssize_t read_size = read(fd_src, buffer, sizeof(buffer));
         if (read_size == 0)
             break;
-        ssize_t write_size = fs_write(fd_dist, buffer, read_size);
+        ssize_t write_size = write(fd_dist, buffer, read_size);
         assert(read_size == write_size);
     }
 
-    int err = fs_close(fd_src);
+    int err = close(fd_src);
     assert(err == 0);
-    err = fs_close(fd_dist);
+    err = close(fd_dist);
     assert(err == 0);
 }
 
 static void test_read(const char *path) {
 
-    int fd = fs_open(path, O_RDONLY);
+    int fd = open(path, O_RDONLY);
     assert(fd >= 0);
 
     uint8_t buffer[1024*64] = {0};
     while (true) {
-        ssize_t read_size = fs_read(fd, buffer, sizeof(buffer));
+        ssize_t read_size = read(fd, buffer, sizeof(buffer));
         if (read_size == 0)
             break;
         for (size_t i = 0; i < (size_t)read_size; i++) {
@@ -139,7 +139,7 @@ static void test_read(const char *path) {
         }
     }
 
-    int err = fs_close(fd);
+    int err = close(fd);
     assert(err == 0);
 }
 

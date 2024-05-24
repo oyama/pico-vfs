@@ -125,7 +125,7 @@ int fs_mkdir(const char *path, mode_t mode) {
     return fs->mkdir(fs, entity_path, mode);
 }
 
-int fs_stat(const char *path, struct stat *st) {
+int _stat(const char *path, struct stat *st) {
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         return -ENOENT;
@@ -135,7 +135,7 @@ int fs_stat(const char *path, struct stat *st) {
     return fs->stat(fs, entity_path, st);
 }
 
-int fs_open(const char *path, int oflags) {
+int _open(const char *path, int oflags, ...) {
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         return -ENOENT;
@@ -159,7 +159,7 @@ int fs_open(const char *path, int oflags) {
     return fd;
 }
 
-int fs_close(int fildes) {
+int _close(int fildes) {
     fs_file_t *file = &file_descriptors[fildes].file;
     filesystem_t *fs = file_descriptors[fildes].filesystem;
     if (fs == NULL) {
@@ -170,7 +170,7 @@ int fs_close(int fildes) {
     return err;
 }
 
-ssize_t fs_write(int fildes, const void *buf, size_t nbyte) {
+ssize_t _write(int fildes, const void *buf, size_t nbyte) {
     fs_file_t *file = &file_descriptors[fildes].file;
     filesystem_t *fs = file_descriptors[fildes].filesystem;
     if (fs == NULL) {
@@ -179,7 +179,7 @@ ssize_t fs_write(int fildes, const void *buf, size_t nbyte) {
     return fs->file_write(fs, file, buf, nbyte);
 }
 
-ssize_t fs_read(int fildes, void *buf, size_t nbyte) {
+ssize_t _read(int fildes, void *buf, size_t nbyte) {
     fs_file_t *file = &file_descriptors[fildes].file;
     filesystem_t *fs = file_descriptors[fildes].filesystem;
     if (fs == NULL)
@@ -188,7 +188,7 @@ ssize_t fs_read(int fildes, void *buf, size_t nbyte) {
     return fs->file_read(fs, file, buf, nbyte);
 }
 
-off_t fs_seek(int fildes, off_t offset, int whence) {
+off_t _lseek(int fildes, off_t offset, int whence) {
     fs_file_t *file = &file_descriptors[fildes].file;
     filesystem_t *fs = file_descriptors[fildes].filesystem;
     if (fs == NULL)
