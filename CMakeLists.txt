@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.13...3.27)
 option(WITHOUT_BLOCKDEVICE_SD "without SD block device in demo and tests")
 
 include(vendor/pico_sdk_import.cmake)
+include(pico_vfs.cmake)
 set(FAMILY rp2040)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -68,9 +69,26 @@ target_include_directories(filesystem_vfs INTERFACE
 )
 target_compile_options(filesystem_vfs INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 
+# Default file system library
+add_library(filesystem_default INTERFACE)
+target_sources(filesystem_default INTERFACE src/filesystem/fs_init.c)
+target_include_directories(filesystem_default INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/include
+)
+target_compile_options(filesystem_default INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
+target_link_libraries(filesystem_default INTERFACE
+  blockdevice_flash
+  filesystem_littlefs
+  filesystem_vfs
+)
+
+
 add_subdirectory(examples/benchmark EXCLUDE_FROM_ALL)
 add_subdirectory(examples/usb_msc_logger EXCLUDE_FROM_ALL)
+add_subdirectory(examples/default_fs EXCLUDE_FROM_ALL)
+
 add_subdirectory(tests EXCLUDE_FROM_ALL)
+
 
 find_program(OPENOCD openocd)
 if(OPENOCD)

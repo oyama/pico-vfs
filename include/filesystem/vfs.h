@@ -13,6 +13,13 @@ extern "C" {
 #include "filesystem/filesystem.h"
 #include "blockdevice/blockdevice.h"
 
+
+#if !defined(DEFAULT_FS_SIZE)
+#define DEFAULT_FS_SIZE    (512 * 1024)
+#endif
+
+bool fs_init(void);
+
 /** Format block device with specify file system
  *
  * Block devices can be formatted and made available as a file system.
