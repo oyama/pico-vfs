@@ -24,8 +24,8 @@ int main(void) {
     if (fp == NULL)
         printf("fopen error=%d\n", errno);
 
-    char buffer[512];
-    size_t read_size = fread(buffer, sizeof(char), sizeof(buffer), fp);
+    char buffer[512] = {0};
+    size_t read_size = fread(buffer, sizeof(buffer), 1, fp);
     if (read_size == 0)
         printf("fread error=%d\n", errno);
     err = fclose(fp);
