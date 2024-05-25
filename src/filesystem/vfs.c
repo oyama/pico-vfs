@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/errno.h>
+#include <sys/dirent.h>
 #include "filesystem/vfs.h"
 
 
@@ -92,7 +93,7 @@ int fs_unmount(const char *path) {
     return 0;
 }
 
-int fs_unlink(const char *path) {
+int _unlink(const char *path) {
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         return -ENOENT;
@@ -102,7 +103,7 @@ int fs_unlink(const char *path) {
     return fs->remove(fs, entity_path);
 }
 
-int fs_rename(const char *old, const char *new) {
+int rename(const char *old, const char *new) {
     // TODO: Check if old and new are the same filesystem
     mountpoint_t *mp = find_mountpoint(old);
     if (mp == NULL) {
@@ -115,7 +116,7 @@ int fs_rename(const char *old, const char *new) {
     return fs->rename(fs, old_entity_path, new_entity_path);
 }
 
-int fs_mkdir(const char *path, mode_t mode) {
+int mkdir(const char *path, mode_t mode) {
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         return -ENOENT;
@@ -134,6 +135,26 @@ int _stat(const char *path, struct stat *st) {
     filesystem_t *fs = mp->filesystem;
     return fs->stat(fs, entity_path, st);
 }
+
+int _fstat(int fildes, struct stat *st) {
+    fs_file_t *file = &file_descriptors[fildes].file;
+    filesystem_t *fs = file_descriptors[fildes].filesystem;
+    if (fs == NULL) {
+        return -EBADF;
+    }
+
+    off_t current = fs->file_tell(fs, file);
+    off_t size = fs->file_seek(fs, file, 0, SEEK_END);
+    off_t err = fs->file_seek(fs, file, current, SEEK_SET);
+    if (current != err) {
+        return err;
+    }
+
+    st->st_size = size;
+    st->st_mode = S_IFREG;
+    return 0;
+}
+
 
 int _open(const char *path, int oflags, ...) {
     mountpoint_t *mp = find_mountpoint(path);
@@ -197,7 +218,10 @@ off_t _lseek(int fildes, off_t offset, int whence) {
     return fs->file_seek(fs, file, offset, whence);
 }
 
-off_t fs_tell(int fildes) {
+off_t _ftello_r(struct _reent *ptr, register FILE *fp) {
+    (void)ptr;
+    int fildes = fp->_file;
+
     fs_file_t *file = &file_descriptors[fildes].file;
     filesystem_t *fs = file_descriptors[fildes].filesystem;
     if (fs == NULL)
@@ -206,7 +230,7 @@ off_t fs_tell(int fildes) {
     return fs->file_tell(fs, file);
 }
 
-int fs_truncate(int fildes, off_t length) {
+int ftruncate(int fildes, off_t length) {
     fs_file_t *file = &file_descriptors[fildes].file;
     filesystem_t *fs = file_descriptors[fildes].filesystem;
     if (fs == NULL)
@@ -215,7 +239,8 @@ int fs_truncate(int fildes, off_t length) {
     return fs->file_truncate(fs, file, length);
 }
 
-fs_dir_t *fs_opendir(const char *path) {
+DIR *opendir(const char *path) {
+
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         return NULL;
@@ -240,7 +265,8 @@ fs_dir_t *fs_opendir(const char *path) {
     return dir;
 }
 
-int fs_closedir(fs_dir_t *dir) {
+int closedir(DIR *dir) {
+
     int fd = dir->fd;
     fs_dir_t *_dir = &dir_descriptors[fd].dir;
     filesystem_t *fs = dir_descriptors[fd].filesystem;
@@ -252,7 +278,8 @@ int fs_closedir(fs_dir_t *dir) {
     return err;
 }
 
-struct dirent *fs_readdir(fs_dir_t *dir) {
+struct dirent *readdir(DIR *dir) {
+
     fs_dir_t *_dir = &dir_descriptors[dir->fd].dir;
     filesystem_t *fs = dir_descriptors[dir->fd].filesystem;
     if (fs == NULL)

@@ -2,6 +2,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
 #include "blockdevice/flash.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
@@ -125,35 +128,40 @@ static void test_api_file_seek() {
 }
 
 static void test_api_file_tell() {
-    test_printf("fs_tell");
+    test_printf("ftell");
 
-    int fd = open("/file", O_RDWR|O_CREAT);
-    assert(fd >= 0);
+    FILE *fp = fopen("/file", "w+");
+    assert(fp != NULL);
 
-    char write_buffer[] = "123456789ABCDEF";
-    ssize_t write_length = write(fd, write_buffer, strlen(write_buffer));
-    assert((size_t)write_length == strlen(write_buffer));
+    char write_data[] = "123456789ABCDEF";
+    size_t write_length = fwrite(write_data, 1, strlen(write_data), fp);
+    assert(write_length == strlen(write_data));
 
-    off_t offset = lseek(fd, 0, SEEK_SET);
-    assert(offset == 0);
+    int err = fflush(fp);
+    assert(err == 0);
 
-    off_t pos = fs_tell(fd);
+    long pos = ftell(fp);
+    assert((size_t)pos == strlen(write_data));
+
+    err = fseek(fp, 0, SEEK_SET);
+    assert(err == 0);
+
+    pos = ftell(fp);
     assert(pos == 0);
 
-    offset = lseek(fd, 0, SEEK_END);
-    assert((size_t)offset == strlen(write_buffer));
+    err = fseek(fp, 0, SEEK_END);
+    assert(err == 0);
+    pos = ftell(fp);
+    assert((size_t)pos == strlen(write_data));
 
-    pos = fs_tell(fd);
-    assert((size_t)pos == strlen(write_buffer));
-
-    int err = close(fd);
+    err = fclose(fp);
     assert(err == 0);
 
     printf(COLOR_GREEN("ok\n"));
 }
 
 static void test_api_file_truncate() {
-    test_printf("fs_truncate");
+    test_printf("ftruncate");
 
     int fd = open("/file", O_RDWR|O_CREAT);
     assert(fd >= 0);
@@ -165,7 +173,7 @@ static void test_api_file_truncate() {
     off_t offset = lseek(fd, 0, SEEK_SET);
     assert(offset == 0);
 
-    int err = fs_truncate(fd, 9);
+    int err = ftruncate(fd, 9);
     assert(err == 0);
 
     char read_buffer[512] = {0};
@@ -180,27 +188,27 @@ static void test_api_file_truncate() {
 }
 
 static void test_api_dir_open() {
-    test_printf("fs_opendir,fs_closedir");
+    test_printf("opendir,closedir");
 
-    fs_dir_t *dir = fs_opendir("/dir");  // non-exists directory
+    DIR *dir = opendir("/dir");  // non-exists directory
     assert(dir == NULL);
 
-    int err = fs_mkdir("/dir", 0777);
+    int err = mkdir("/dir", 0777);
     assert(err == 0);
 
-    dir = fs_opendir("/dir");
+    dir = opendir("/dir");
     assert(dir != NULL);
 
-    err = fs_closedir(dir);
+    err = closedir(dir);
     assert(err == 0);
 
     printf(COLOR_GREEN("ok\n"));
 }
 
 static void test_api_dir_read() {
-    test_printf("fs_readdir");
+    test_printf("readdir");
 
-    int err = fs_mkdir("/dir", 0777);
+    int err = mkdir("/dir", 0777);
     assert(err == 0 || err == -EEXIST);
 
     // add regular file
@@ -209,39 +217,39 @@ static void test_api_dir_read() {
     err = close(fd);
     assert(err == 0);
 
-    fs_dir_t *dir = fs_opendir("/dir");
+    DIR *dir = opendir("/dir");
     assert(dir != NULL);
 
-    struct dirent *ent = fs_readdir(dir);
+    struct dirent *ent = readdir(dir);
     assert(ent != NULL);
     if (ent->d_type == DT_DIR) {
         // for not FAT file system
         assert(strcmp(ent->d_name, ".") == 0);
 
-        ent = fs_readdir(dir);
+        ent = readdir(dir);
         assert(ent != NULL);
         assert(ent->d_type == DT_DIR);
         assert(strcmp(ent->d_name, "..") == 0);
 
-        ent = fs_readdir(dir);
+        ent = readdir(dir);
         assert(ent != NULL);
     }
     assert(ent->d_type == DT_REG);
     assert(strcmp(ent->d_name, "file") == 0);
 
-    ent = fs_readdir(dir);  // Reach the end of the directory
+    ent = readdir(dir);  // Reach the end of the directory
     assert(ent == NULL);
 
-    err = fs_closedir(dir);
+    err = closedir(dir);
     assert(err == 0);
 
     printf(COLOR_GREEN("ok\n"));
 }
 
 static void test_api_remove() {
-    test_printf("fs_unlink");
+    test_printf("unlink");
 
-    int err = fs_unlink("/not-exists");
+    int err = unlink("/not-exists");
     assert(err == -ENOENT);
 
     int fd = open("/file", O_WRONLY|O_CREAT);
@@ -249,16 +257,16 @@ static void test_api_remove() {
     err = close(fd);
     assert(err == 0);
 
-    err = fs_unlink("/file");
+    err = unlink("/file");
     assert(err == 0);
 
     printf(COLOR_GREEN("ok\n"));
 }
 
 static void test_api_rename() {
-    test_printf("fs_rename");
+    test_printf("rename");
 
-    int err = fs_rename("/not-exists", "/renamed");
+    int err = rename("/not-exists", "/renamed");
     assert(err == -ENOENT);
 
     int fd = open("/file", O_WRONLY|O_CREAT);
@@ -270,7 +278,7 @@ static void test_api_rename() {
     err = close(fd);
     assert(err == 0);
 
-    err = fs_rename("/file", "/renamed");
+    err = rename("/file", "/renamed");
     assert(err == 0);
 
     fd = open("/renamed", O_RDONLY);
@@ -306,7 +314,7 @@ static void test_api_stat() {
     assert(finfo.st_mode & S_IFREG);
 
     // directory
-    err = fs_mkdir("/dir", 0777);
+    err = mkdir("/dir", 0777);
     assert(err == 0 || err == -EEXIST);
     err = stat("/dir", &finfo);
     assert(err == 0);
@@ -316,7 +324,7 @@ static void test_api_stat() {
 }
 
 static void test_api_unmount(void) {
-    test_printf("fs_mount");
+    test_printf("fs_unmount");
 
     int err = fs_unmount("/");
     assert(err == 0);
