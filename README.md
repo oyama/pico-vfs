@@ -49,21 +49,21 @@ pico-vfs can be further customized. The sample program included in [examples/def
 
 To provide a flexible and lightweight file system framework for embedded systems, pico-vfs consists of three layers: a __block device__ layer that abstracts storage devices, a __file system__ layer that abstracts file systems, and a __virtual file system__ layer that links these to the POSIX API.
 
-## Block device layer
+### Block device layer
 
 A block device is an object implementing `blockdevice_t`, which includes callback functions and variables tailored to the block device, allowing different block devices to be operated with a consistent interface.
 
 - [src/blockdevice/flash.c](src/blockdevice/flash.c): Raspberry Pi Pico on-board flash memory block device
 - [src/blockdevice/sd.c](src/blockdevice/sd.c): SPI-connected SD or MMC card block device
 
-## File system layer
+### File system layer
 
 The file system is an object implementing `filesystem_t`, which contains callback functions and variables based on the file system, enabling different file systems to be operated with a consistent interface.
 
 - [src/filesystem/fat.c](src/filesystem/fat.c): FAT file system with FatFs[^1]
 - [src/filesystem/littlefs.c](src/filesystem/littlefs.c): littlefs[^2] filesystem
 
-## VFS layer
+### VFS layer
 
 Block devices and file systems are integrated into the POSIX file API by the VFS layer. Users can perform operations like `open()`, `read()`, and `write()` as usual, and also use higher-level functions such as `fopen()`, `fprintf()`, and `fgets()`. File mounting and formatting APIs not defined in POSIX are provided under the `fs_*()` namespace.
 
