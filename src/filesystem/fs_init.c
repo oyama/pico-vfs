@@ -9,9 +9,9 @@ bool __attribute__((weak)) fs_init(void) {
     blockdevice_t *device = blockdevice_flash_create(PICO_FLASH_SIZE_BYTES - DEFAULT_FS_SIZE, 0);
 
     int err = fs_mount("/", fs, device);
-    if (err != 0) {
+    if (err == -1) {
         err = fs->format(fs, device);
-        if (err != 0) {
+        if (err == -1) {
             return false;
         }
         err = fs_mount("/", fs, device);

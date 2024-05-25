@@ -1,7 +1,7 @@
 #include <errno.h>
-#include <pico/stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pico/stdlib.h>
 #include "filesystem/vfs.h"
 
 int main(void) {
@@ -10,7 +10,7 @@ int main(void) {
 
     FILE *fp = fopen("/HELLO.TXT", "w");
     if (fp == NULL)
-        printf("fopen error\n");
+        printf("fopen error: %s\n", strerror(errno));
     fprintf(fp, "Hello World!\n");
     int err = fclose(fp);
     if (err == -1)
@@ -23,5 +23,5 @@ int main(void) {
     fgets(buffer, sizeof(buffer), fp);
     fclose(fp);
 
-    printf("/HELLO.TXT: %s", buffer);
+    printf("HELLO.TXT: %s", buffer);
 }

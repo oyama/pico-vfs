@@ -1,0 +1,3 @@
+add_subdirectory(benchmark EXCLUDE_FROM_ALL)
+add_subdirectory(usb_msc_logger EXCLUDE_FROM_ALL)
+add_subdirectory(default_fs EXCLUDE_FROM_ALL)

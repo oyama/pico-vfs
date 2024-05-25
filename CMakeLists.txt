@@ -83,10 +83,7 @@ target_link_libraries(filesystem_default INTERFACE
 )
 
 
-add_subdirectory(examples/benchmark EXCLUDE_FROM_ALL)
-add_subdirectory(examples/usb_msc_logger EXCLUDE_FROM_ALL)
-add_subdirectory(examples/default_fs EXCLUDE_FROM_ALL)
-
+add_subdirectory(examples EXCLUDE_FROM_ALL)
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
 
