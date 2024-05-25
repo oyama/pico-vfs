@@ -66,19 +66,19 @@ static bool filesystem_init(void) {
     fat = filesystem_fat_create();
 
     int err = fs_format(littlefs, flash1);
-    if (err != 0) {
-        printf("fs_format error=%d\n", err);
+    if (err == -1) {
+        printf("fs_format error: %s\n", strerror(errno));
         return false;
     }
     err = fs_format(fat, flash2);
-    if (err != 0) {
-        printf("fs_format error=%d\n", err);
+    if (err == -1) {
+        printf("fs_format error: %s\n", strerror(errno));
         return false;
     }
 
     err = fs_mount("/internal", littlefs, flash1);
-    if (err != 0) {
-        printf("fs_mount error=%d\n", err);
+    if (err == 01) {
+        printf("fs_mount error: %s\n", strerror(errno));
         return false;
     }
     return true;
@@ -88,19 +88,19 @@ static void export_filesystem(void) {
     printf("copy /internal to /export\n");
 
     int src = open("/internal/TEMP.TXT", O_RDONLY);
-    if (src < 0) {
+    if (src == -1) {
         return;
     }
 
     int err = fs_mount("/export", fat, flash2);
-    if (err != 0) {
-        printf("fs_mount error=%d\n", err);
+    if (err == -1) {
+        printf("fs_mount error: %s\n", strerror(errno));
         return;
     }
 
     int dist = open("/export/TEMP.TXT", O_WRONLY|O_CREAT);
-    if (dist < 0) {
-        printf("open error=%d\n", dist);
+    if (dist == -1) {
+        printf("open error: %s\n", strerror(errno));
         return;
     }
     char buffer[1024*64];
@@ -109,8 +109,8 @@ static void export_filesystem(void) {
         if (read_size == 0)
             break;
         ssize_t write_size = write(dist, buffer, read_size);
-        if (write_size < 0) {
-            printf("write error=%d\n", write_size);
+        if (write_size == -1) {
+            printf("write error: %s\n", strerror(errno));
             break;
         }
     }
@@ -118,8 +118,8 @@ static void export_filesystem(void) {
     close(src);
 
     err = fs_unmount("/export");
-    if (err != 0) {
-        printf("fs_unmount error=%d\n", err);
+    if (err == -1) {
+        printf("fs_unmount error: %s\n", strerror(errno));
         return;
     }
 }
@@ -138,18 +138,18 @@ static void logging_task(void) {
     printf("temperature=%.1f\n", temperature);
 
     int fd = open("/internal/TEMP.TXT", O_WRONLY|O_APPEND|O_CREAT);
-    if (fd < 0) {
-        printf("open('/internal/TEMP.TXT') error=%d\n", fd);
+    if (fd == -1) {
+        printf("open('/internal/TEMP.TXT') error: %s\n", strerror(errno));
     }
     char buffer[512] = {0};
     int length = sprintf(buffer, "temperature,%.1f\n", temperature);
     ssize_t write_size = write(fd, buffer, length);
-    if (write_size < 0) {
-        printf("write error=%d\n", write_size);
+    if (write_size == -1) {
+        printf("write error: %s\n", strerror(errno));
     }
     int err = close(fd);
-    if (err != 0) {
-        printf("close() error=%d\n", fd);
+    if (err == -1) {
+        printf("close error: %s\n", strerror(errno));
     }
     last_measure = now;
 }
@@ -200,4 +200,3 @@ int main(void) {
          tud_task();
     }
 }
-

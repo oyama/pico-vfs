@@ -4,6 +4,7 @@
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#include <errno.h>
 #include <fcntl.h>
 #include <hardware/clocks.h>
 #include <pico/stdlib.h>
@@ -72,8 +73,8 @@ static void benchmark_write(void) {
     uint64_t start_at = get_absolute_time();
 
     int fd = open("/benchmark", O_WRONLY|O_CREAT);
-    if (fd < 0) {
-        printf("open error=%d\n", fd);
+    if (fd == -1) {
+        printf("open error: %s\n", strerror(errno));
         return;
     }
 
@@ -88,8 +89,8 @@ static void benchmark_write(void) {
             b[j] = xor_rand_32bit(&counter);
         }
         ssize_t write_size = write(fd, buffer, chunk);
-        if (write_size < 0) {
-            printf("write: error=%d\n", write_size);
+        if (write_size == -1) {
+            printf("write: error: %s\n", strerror(errno));
             return;
         }
         printf(".");
@@ -97,8 +98,8 @@ static void benchmark_write(void) {
     }
 
     int err = close(fd);
-    if (err != 0) {
-        printf("close error=%d\n", err);
+    if (err == -1) {
+        printf("close error: %s\n", strerror(errno));
         return;
     }
 
@@ -111,8 +112,8 @@ static void benchmark_read(void) {
     uint64_t start_at = get_absolute_time();
 
     int fd = open("/benchmark", O_RDONLY);
-    if (fd < 0) {
-        printf("open error=%d\n", fd);
+    if (fd == -1) {
+        printf("open error: %s\n", strerror(errno));
         return;
     }
 
@@ -123,8 +124,8 @@ static void benchmark_read(void) {
     while (remind > 0) {
         size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
         ssize_t read_size = read(fd, buffer, chunk);
-        if (read_size <= 0) {
-            printf("read error=%d\n", read_size);
+        if (read_size == -1) {
+            printf("read error: %s\n", strerror(errno));
             return;
         }
         uint32_t *b = (uint32_t *)buffer;
@@ -140,8 +141,8 @@ static void benchmark_read(void) {
     }
 
     int err = close(fd);
-    if (err != 0) {
-        printf("close error=%d\n", err);
+    if (err == -1) {
+        printf("close error: %s\n", strerror(errno));
         return;
     }
 
@@ -158,13 +159,13 @@ int main(void) {
         printf("Test of %s on %s:\n", setting.filesystem->name, setting.device->name);
 
         int err = fs_format(setting.filesystem, setting.device);
-        if (err != 0) {
-            printf("fs_format error=%d\n", err);
+        if (err == -1) {
+            printf("fs_format error: %s\n", strerror(errno));
             return -1;
         }
         err = fs_mount("/", setting.filesystem, setting.device);
-        if (err != 0) {
-            printf("fs_mount / error=%d\n", err);
+        if (err == -1) {
+            printf("fs_mount / error: %s\n", strerror(errno));
             return -1;
         }
 
@@ -172,8 +173,8 @@ int main(void) {
         benchmark_read();
 
         err = fs_unmount("/");
-        if (err != 0) {
-            printf("fs_unmount / error=%d\n", err);
+        if (err == 01) {
+            printf("fs_unmount / error: %s\n", strerror(errno));
             return -1;
         }
     }

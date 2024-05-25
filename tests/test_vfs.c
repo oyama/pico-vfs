@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -59,7 +60,8 @@ static void test_api_file_open_close() {
     test_printf("open,close");
 
     int fd = open("/file", O_RDONLY);  // non-existing file
-    assert(fd == -ENOENT);
+    assert(fd == -1);
+    assert(errno == ENOENT);
 
     fd = open("/file", O_WRONLY|O_CREAT);
     assert(fd == 0);
@@ -190,11 +192,12 @@ static void test_api_file_truncate() {
 static void test_api_dir_open() {
     test_printf("opendir,closedir");
 
-    DIR *dir = opendir("/dir");  // non-exists directory
+    DIR *dir = opendir("/dir-non-exists");  // non-exists directory
     assert(dir == NULL);
+    assert((errno == ENOTDIR) || (errno == ENOENT));  // NOTE: FAT returns ENOTDIR, littlefs returns ENOENT
 
     int err = mkdir("/dir", 0777);
-    assert(err == 0);
+    assert((err == 0) || (err -1 && errno == EEXIST));
 
     dir = opendir("/dir");
     assert(dir != NULL);
@@ -209,7 +212,7 @@ static void test_api_dir_read() {
     test_printf("readdir");
 
     int err = mkdir("/dir", 0777);
-    assert(err == 0 || err == -EEXIST);
+    assert(err == 0 || (err == -1 && errno == EEXIST));
 
     // add regular file
     int fd = open("/dir/file", O_WRONLY|O_CREAT);
@@ -239,6 +242,7 @@ static void test_api_dir_read() {
 
     ent = readdir(dir);  // Reach the end of the directory
     assert(ent == NULL);
+    assert(errno == 0);
 
     err = closedir(dir);
     assert(err == 0);
@@ -250,7 +254,8 @@ static void test_api_remove() {
     test_printf("unlink");
 
     int err = unlink("/not-exists");
-    assert(err == -ENOENT);
+    assert(err == -1);
+    assert(errno == ENOENT);
 
     int fd = open("/file", O_WRONLY|O_CREAT);
     assert(fd >= 0);
@@ -267,7 +272,8 @@ static void test_api_rename() {
     test_printf("rename");
 
     int err = rename("/not-exists", "/renamed");
-    assert(err == -ENOENT);
+    assert(err == -1);
+    assert(errno == ENOENT);
 
     int fd = open("/file", O_WRONLY|O_CREAT);
     assert(fd >= 0);
@@ -315,7 +321,7 @@ static void test_api_stat() {
 
     // directory
     err = mkdir("/dir", 0777);
-    assert(err == 0 || err == -EEXIST);
+    assert(err == 0 || (err == -1 && errno == EEXIST));
     err = stat("/dir", &finfo);
     assert(err == 0);
     assert(finfo.st_mode & S_IFDIR);
@@ -348,11 +354,11 @@ void test_vfs(void) {
     test_api_file_seek();
     test_api_file_tell();
     test_api_file_truncate();
-    test_api_dir_open();
-    test_api_dir_read();
+    test_api_stat();
     test_api_remove();
     test_api_rename();
-    test_api_stat();
+    test_api_dir_open();
+    test_api_dir_read();
     test_api_unmount();
 
     cleanup(flash);
@@ -375,11 +381,11 @@ void test_vfs(void) {
     test_api_file_seek();
     test_api_file_tell();
     test_api_file_truncate();
-    test_api_dir_open();
-    test_api_dir_read();
+    test_api_stat();
     test_api_remove();
     test_api_rename();
-    test_api_stat();
+    test_api_dir_open();
+    test_api_dir_read();
     test_api_unmount();
 
     cleanup(flash);

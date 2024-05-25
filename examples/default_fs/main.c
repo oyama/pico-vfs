@@ -1,8 +1,8 @@
 #include <errno.h>
 #include <pico/stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "filesystem/vfs.h"
-
 
 int main(void) {
     stdio_init_all();
@@ -13,12 +13,12 @@ int main(void) {
         printf("fopen error\n");
     fprintf(fp, "Hello World!\n");
     int err = fclose(fp);
-    if (err != 0)
-        printf("close error=%d\n", err);
+    if (err == -1)
+        printf("close error: %s\n", strerror(errno));
 
     fp = fopen("/HELLO.TXT", "r");
     if (fp == NULL)
-        printf("fopen error=%d\n", errno);
+        printf("fopen error: %s\n", strerror(errno));
     char buffer[512] = {0};
     fgets(buffer, sizeof(buffer), fp);
     fclose(fp);
