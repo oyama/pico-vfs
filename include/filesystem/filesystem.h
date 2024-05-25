@@ -49,7 +49,7 @@ typedef struct filesystem {
     const char *name;
     void *context;
 
-    int (*mount)(struct filesystem *fs, blockdevice_t *device);
+    int (*mount)(struct filesystem *fs, blockdevice_t *device, bool pending);
     int (*unmount)(struct filesystem *fs);
     int (*format)(struct filesystem *fs, blockdevice_t *device);
 

@@ -151,7 +151,8 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     return 0;
 }
 
-static int mount(filesystem_t *fs, blockdevice_t *device) {
+static int mount(filesystem_t *fs, blockdevice_t *device, bool pending) {
+    (void)pending;
     filesystem_littlefs_context_t *context = fs->context;
     int err = device->init(device);
     if (err) {

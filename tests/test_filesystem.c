@@ -46,7 +46,7 @@ static void test_api_format(filesystem_t *fs, blockdevice_t *device) {
 static void test_api_mount(filesystem_t *fs, blockdevice_t *device) {
     test_printf("mount");
 
-    int err = fs->mount(fs, device);
+    int err = fs->mount(fs, device, false);
     assert(err == 0);
 
     printf(COLOR_GREEN("ok\n"));

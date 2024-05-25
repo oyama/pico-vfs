@@ -71,7 +71,7 @@ int fs_format(filesystem_t *fs, blockdevice_t *device) {
 }
 
 int fs_mount(const char *dir, filesystem_t *fs, blockdevice_t *device) {
-    int err = fs->mount(fs, device);
+    int err = fs->mount(fs, device, false);
     if (err) {
         return _error_remap(err);
     }
