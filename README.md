@@ -1,74 +1,75 @@
 # Thin virtual file system for Raspberry Pi Pico
 
-__pico-vfs__ adds a Unix-like, lightweight virtual file system (VFS) layer to the Raspberry Pi Pico, providing flexible, easy-to-use, and lightweight storage capabilities. This framework allows for the free combination of various __block devices__ and __file systems__ to deliver a unified file system starting from the root `/`.
+__pico-vfs__ seamlessly integrates POSIX file APIs on the Raspberry Pi Pico, allowing users to interact with the file system using a familiar, standardized interface. pico-vfs offers the flexibility to freely combine various __block devices__ and __file systems__ to configure an integrated file system, and is easy to set up from the start.
+
+## Key Features
+
+- **POSIX API Support**: Utilize standard POSIX file operations such as `open`, `read`, `write`, and `close` to achieve intuitive file handling.
+- **Modular Design**: Easily exchange underlying block devices and file systems without modifying application code, providing high flexibility.
+- **Pre-configured File System**: Includes a default file system setup, reducing initial setup time and complexity.
+- **Customizability**: Use the `pico_enable_filesystem` function in your project's CMake setup to configure and activate different file systems and block devices as needed.
 
 pico-vfs is designed with resource-constrained environments in mind, making it easy to customize and readily adaptable to specific project needs.
 
 ## Quick Start Guide
 
-The pico-vfs consists of a _block device_, a _file system_ and a _VFS layer_ that brings these together.
-Users are free to combine the storage device's block devices and the file systems deployed on them to configure the best file system for their embedded project.
+To use pico-vfs, add the file system enable instructions to your project's `CMakeLists.txt`:
+
+```CMakeLists.txt
+pico_enable_filesystem(${CMAKE_PROJECT_NAME})
+```
+
+Simply call the file system initialization function `fs_init()` from your program:
 
 ```c
-// Block Device creation: Create a block device for the onboard flash memory.
-#define FLASH_START_AT           (0.5 * 1024 * 1024)
-#define FLASH_SIZE_USE_ALL_REST  0
-blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_SIZE_USE_ALL_REST);
+#include <pico/stdlib.h>
+#include <stdio.h>
+#include "filesystem/vfs.h"
 
-// Block Device creation: Create a block device for an SD card connected via SPI.
-blockdevice_t *sd = blockdevice_sd_create(spi0,
-                                          PICO_DEFAULT_SPI_TX_PIN,
-                                          PICO_DEFAULT_SPI_RX_PIN,
-                                          PICO_DEFAULT_SPI_SCK_PIN,
-                                          PICO_DEFAULT_SPI_CSN_PIN,
-                                          24 * MHZ,
-                                          false);
+int main(void) {
+    stdio_init_all();
+    fs_init();
 
-// File System creation: Create a FAT file system instance.
-filesystem_t *fat = filesystem_fat_create();
-
-// File System creation: Create a LittleFS file system instance with specific parameters.
-#define LFS_BLOCK_CYCLES    500
-#define LFS_LOOKAHEAD_SIZE  16
-filesystem_t *littlefs = filesystem_littlefs_create(LFS_BLOCK_CYCLES, LFS_LOOKAHEAD_SIZE);
-
-// Mounting: Mount the LittleFS on the onboard flash memory at root directory.
-fs_mount("/", littlefs, flash);
-
-// Mounting: Mount the FAT file system on the SD card at '/sd'.
-fs_mount("/sd", fat, sd);
-
-// File Operations: Open a file '/sd/README.TXT' on the SD card for writing. Create if not exists.
-int fd = open("/sd/README.TXT", O_WRONLY|O_CREAT);
-
-char buffer[] = "Hello World!";
-write(fd, buffer, strlen(buffer));
-
-close(fd);
+    FILE *fp = fopen("/HELLO.TXT", "w");
+    fprintf(fp, "Hello World!\n");
+    fclose(fp);
+}
 ```
-The `benchmark` included in the examples show file copies on all combinations of two different block devices and two different file systems. Similarly, the `logger` included in examples uses the onboard flash memory as two block devices, each formatted and used with a different file system.
 
-In addition, the individual block devices and file systems are available as separate INTERFACE libraries, so that the file system can be configured with the minimum required footprint.
+By default, 512KB of littlefs is mounted at `/`, and the Pico's onboard flash memory is used as a block device.
 
-## Block device
+If you want to customize the storage size, specify the required storage size in `pico_enable_filesystem`:
 
-A block device is a struct implementing `blockdevice_t`. The data type contains callback functions and variables depending on the block device, and allowing different block devices to be operated with a consistent interface.
+```CMakeLists.txt
+pico_enable_filesystem(${CMAKE_PROJECT_NAME} FS_SIZE 1048576)
+```
+pico-vfs can be further customized. The sample program included in [examples/default\_fs/my\_fs\_init.c](examples/default_fs/my_fs_init.c) demonstrates mounting a FAT file system using an SD card as a block device and littlefs on the onboard flash memory in a single namespace.
+
+## Architecture overview
+
+To provide a flexible and lightweight file system framework for embedded systems, pico-vfs consists of three layers: a __block device__ layer that abstracts storage devices, a __file system__ layer that abstracts file systems, and a __virtual file system__ layer that links these to the POSIX API.
+
+## Block device layer
+
+A block device is an object implementing `blockdevice_t`, which includes callback functions and variables tailored to the block device, allowing different block devices to be operated with a consistent interface.
 
 - [src/blockdevice/flash.c](src/blockdevice/flash.c): Raspberry Pi Pico on-board flash memory block device
 - [src/blockdevice/sd.c](src/blockdevice/sd.c): SPI-connected SD or MMC card block device
 
-## File system
+## File system layer
 
-The file system is a struct implementation `filesystem_t`. This data types contains callback functions and variables depending on the file system, and allows different file systems to be operated with a consistent interface.
+The file system is an object implementing `filesystem_t`, which contains callback functions and variables based on the file system, enabling different file systems to be operated with a consistent interface.
 
 - [src/filesystem/fat.c](src/filesystem/fat.c): FAT file system with FatFs[^1]
 - [src/filesystem/littlefs.c](src/filesystem/littlefs.c): littlefs[^2] filesystem
 
-## VFS
+## VFS layer
 
-Block devices and file systems are integrated into a UNIX-like API by VFS layer. Users can `fs_format()` or `fs_mount()` a combination of block devices and file systems, which can then be `open()` for further `read()` and `write()`.
+Block devices and file systems are integrated into the POSIX file API by the VFS layer. Users can perform operations like `open()`, `read()`, and `write()` as usual, and also use higher-level functions such as `fopen()`, `fprintf()`, and `fgets()`. File mounting and formatting APIs not defined in POSIX are provided under the `fs_*()` namespace.
 
-- [include/filesystem/vfs.h](include/filesystem/vfs.h): Virtual file system layer
+- [src/filesystem/vfs.c](src/filesystem/vfs.c): Virtual file system layer
+
+Furthermore, individual block devices and file systems are available as separate INTERFACE libraries, enabling the file system to be configured with minimal footprint.
 
 ## Examples
 
@@ -81,10 +82,10 @@ git clone --recursive https://github.com/oyama/pico-vfs.git
 cd pico-vfs
 mkdir build; cd build
 PICO_SDK_FETCH_FROM_GIT=1 cmake ..
-make benchmark logger
+make benchmark logger default_fs
 ```
 The above examples specify the environment variable `PICO_SDK_FETCH_FROM_GIT` to download the pico-sdk from GitHub. If you want to specify a locally deployed pico-sdk, you should set it with the `PICO_SDK_PATH` environment variable.
-The build generates the firmware `examples/benchmark/benchmark.uf2` and `examples/usb_msc_logger/logger.uf2`. Both can be installed by simply dragging and dropping them onto a Raspberry Pi Pico running in BOOTSEL mode.
+The build generates the firmware `examples/benchmark/benchmark.uf2`, `examples/usb_msc_logger/logger.uf2` and `examples/default_fs/default_fs.uf2`. Both can be installed by simply dragging and dropping them onto a Raspberry Pi Pico running in BOOTSEL mode.
 
 If no SD card device is connected, the `WITHOUT_BLOCKDEVICE_SD` option can be specified to skip the SD card manipulation procedure from the demo and unit tests.
 
@@ -109,50 +110,66 @@ The spi and pin used in the block device argument can be customised. The followi
 
 ## Integration into project
 
-The pico-vfs components are defined as _INTERFACE_ libraries. You can build by adding pico-vfs to your project's `CMakeLists.txt` and specifying the libraries of the components you want to introduce.
+pico-vfs components are defined as _INTERFACE_ libraries. You can build by adding pico-vfs to your project's `CMakeLists.txt` and specifying the libraries of the components you want to introduce.
 
 ```CMakeLists.txt
 add_subdirectory(pico-vfs)
+include(pico-vfs/pico_vfs.cmake)
+
+pico_enable_filesystem(${CMAKE_PROJECT_NAME})
+```
+
+In this example, a minimal number of components are configured by default.
+
+For instance, a configuration where the onboard flash memory is set up with littlefs and combined with the FAT file system on an SD card is as follows:
+
+```CMakeLists.txt
+pico_enable_filesystem(${CMAKE_PROJECT_NAME} FS_INIT my_fs_init.c)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
+  blockdevice_flash
   blockdevice_sd
-  blockdevice_flash
+  filesystem_littlefs
   filesystem_fat
-  filesystem_littlefs
   filesystem_vfs
-)
+```
+You can add the `fs_init()` function to your project to freely layout the file system.
+
+```my_fs_init.c
+#include <hardware/clocks.h>
+#include <hardware/flash.h>
+#include "blockdevice/flash.h"
+#include "blockdevice/sd.h"
+#include "filesystem/fat.h"
+#include "filesystem/littlefs.h"
+#include "filesystem/vfs.h"
+
+bool fs_init(void) {
+    blockdevice_t *flash = blockdevice_flash_create(PICO_FLASH_SIZE_BYTES - DEFAULT_FS_SIZE, 0);
+    blockdevice_t *sd = blockdevice_sd_create(spi0,
+                                              PICO_DEFAULT_SPI_TX_PIN,
+                                              PICO_DEFAULT_SPI_RX_PIN,
+                                              PICO_DEFAULT_SPI_SCK_PIN,
+                                              PICO_DEFAULT_SPI_CSN_PIN,
+                                              10 * MHZ,
+                                              false);
+    filesystem_t *lfs = filesystem_littlefs_create(500, 16);
+    filesystem_t *fat = filesystem_fat_create();
+
+    fs_mount("/", lfs, flash);
+    fs_mount("/sd", fat, sd);
+    return true;
+}
 ```
 
-In this example, all components are registered, but if, for example, the block device is only on-board `flash` and the file system is only `littlefs`, the following works by registering only the components required.
-
-```CMakeLists.txt
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
-  blockdevice_flash
-  filesystem_littlefs
-  filesystem_vfs
-)
-```
-
-If desired, the VFS layer can be removed and only the file system layer can be used on bare metal.
-
-```CMakeLists.txt
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
-  blockdevice_flash
-  filesystem_littlefs
-)
-```
-
-Of course, more-bare-metal use, where only block devices are used, is also possible.
+Of course, a more bare-metal use, where only block devices are utilized, is also possible.
 
 ## Related Projects and Inspirations
 
 There are multiple ways to add filesystems to the pico-sdk environment. Firstly, FatFs[^1] and littlefs[^2] are popular file system implementations. These filesystem implementations require writing drivers for the block devices used. They also each have their own Unix-like API, but with a distinctive dialect.
-While there are several solutions that cover the problem of writing drivers for the Raspberry Pi Pico, the carlk3[^6] implementation is probably the most popular.
-Especially, it includes DMA support to reduce CPU load and support for even faster SDIO[^7]. This would be the first choice for projects using SD cards and the FAT file system with pico-sdk.
+While there are several solutions that cover the problem of writing drivers for the Raspberry Pi Pico, the carlk3[^6] implementation is probably the most popular. Especially, it includes DMA support to reduce CPU load and support for even faster SDIO[^7]. This would be the first choice for projects using SD cards and the FAT file system with pico-sdk.
 Among multi-filesystem implementations, Memotech-Bill[^8] implementation provides standard I/O support for pico-sdk using the newlib[^9] hook. The littlefs file system for on-board flash and FatFs for SD cards can be operated as an integrated file system. It is an ambitious project that goes beyond files and integrates character devices such as TTYs and UARTs.
 
 While referring to these existing projects, _pico-vfs_ aims to make the implementation of drivers and file systems for block devices separate and interchangeable, similar to MicroPython's VFS[^10] and ARM Mbed OS's Storage[^11].
-
-![block-diagram](https://github.com/oyama/pico-vfs/assets/27072/ddc89f54-b011-40d2-b150-22495a4529c1)
 
 ## References
 

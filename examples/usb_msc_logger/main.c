@@ -77,7 +77,7 @@ static bool filesystem_init(void) {
     }
 
     err = fs_mount("/internal", littlefs, flash1);
-    if (err == 01) {
+    if (err == -1) {
         printf("fs_mount error: %s\n", strerror(errno));
         return false;
     }
