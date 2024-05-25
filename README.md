@@ -36,7 +36,7 @@ int main(void) {
 }
 ```
 
-By default, 512KB of littlefs is mounted at `/`, and the Pico's onboard flash memory is used as a block device.
+By default, 1.4MB of littlefs is mounted at `/`, and the Pico's onboard flash memory is used as a block device.
 
 If you want to customize the storage size, specify the required storage size in `pico_enable_filesystem`:
 

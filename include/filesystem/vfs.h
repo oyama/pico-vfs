@@ -15,7 +15,7 @@ extern "C" {
 
 
 #if !defined(DEFAULT_FS_SIZE)
-#define DEFAULT_FS_SIZE    (512 * 1024)
+#define DEFAULT_FS_SIZE    (1408 * 1024)   // Can share storage with MicroPython for RP2
 #endif
 
 /** Enable predefined file systems
