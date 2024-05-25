@@ -41,7 +41,7 @@ By default, 1.4MB of littlefs is mounted at `/`, and the Pico's onboard flash me
 If you want to customize the storage size, specify the required storage size in `pico_enable_filesystem`:
 
 ```CMakeLists.txt
-pico_enable_filesystem(${CMAKE_PROJECT_NAME} FS_SIZE 1048576)
+pico_enable_filesystem(${CMAKE_PROJECT_NAME} FS_SIZE 1441792)
 ```
 pico-vfs can be further customized. The sample program included in [examples/default\_fs/my\_fs\_init.c](examples/default_fs/my_fs_init.c) demonstrates mounting a FAT file system using an SD card as a block device and littlefs on the onboard flash memory in a single namespace.
 
