@@ -1,3 +1,7 @@
+/*
+ * NOTE: The default file system consumes 1.4 MB (0x160000 bytes) of flash memory.
+ *       This means that it can share storage with MicroPython for RP2.
+ */
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
