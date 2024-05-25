@@ -1,19 +1,27 @@
-#include <pico/stdlib.h>
+#include <errno.h>
 #include <stdio.h>
+#include <string.h>
+#include <pico/stdlib.h>
 #include "filesystem/vfs.h"
-
 
 int main(void) {
     stdio_init_all();
     fs_init();
 
-    int fd = fs_open("/HELLO.TXT", O_WRONLY|O_CREAT);
-    if (fd < 0)
-        printf("fs_open error error=%d\n", fd);
-    int err = fs_write(fd, "Hello World!\n", 12);
-    if (err < 0)
-        printf("fs_write error=%d\n", err);
-    err = fs_close(fd);
-    if (err != 0)
-        printf("fs_close error=%d\n", err);
+    FILE *fp = fopen("/HELLO.TXT", "w");
+    if (fp == NULL)
+        printf("fopen error: %s\n", strerror(errno));
+    fprintf(fp, "Hello World!\n");
+    int err = fclose(fp);
+    if (err == -1)
+        printf("close error: %s\n", strerror(errno));
+
+    fp = fopen("/HELLO.TXT", "r");
+    if (fp == NULL)
+        printf("fopen error: %s\n", strerror(errno));
+    char buffer[512] = {0};
+    fgets(buffer, sizeof(buffer), fp);
+    fclose(fp);
+
+    printf("HELLO.TXT: %s", buffer);
 }

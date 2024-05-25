@@ -189,7 +189,7 @@ DWORD get_fattime(void) {
 }
 
 
-static int mount(filesystem_t *fs, blockdevice_t *device) {
+static int mount(filesystem_t *fs, blockdevice_t *device, bool pending) {
     filesystem_fat_context_t *context = fs->context;
     char _fsid[3] = {0};
 
@@ -200,7 +200,7 @@ static int mount(filesystem_t *fs, blockdevice_t *device) {
             _fsid[0] = '0' + i;
             _fsid[1] = ':';
             _fsid[2] = '\0';
-            FRESULT res = f_mount(&context->fatfs, _fsid, 0);
+            FRESULT res = f_mount(&context->fatfs, _fsid, !pending);
             return fat_error_remap(res);
         }
     }
@@ -264,7 +264,7 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
         return err;
     }
 
-    err = fs->mount(fs, device);
+    err = fs->mount(fs, device, true);
     if (err) {
         printf("mount error=%d\n", err);
         return err;

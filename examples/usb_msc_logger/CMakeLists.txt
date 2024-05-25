@@ -13,11 +13,9 @@ target_link_libraries(logger PRIVATE
   filesystem_fat
   filesystem_littlefs
   filesystem_vfs
-#  tinyusb_additions
   tinyusb_board
   tinyusb_device
 )
-target_link_options(logger PRIVATE -Wl,--print-memory-usage)
 pico_enable_stdio_usb(logger 1)
 pico_add_extra_outputs(logger)
 

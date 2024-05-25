@@ -43,12 +43,13 @@ typedef struct {
     struct dirent current;
 } fs_dir_t;
 
+
 typedef struct filesystem {
     filesystem_type_t type;
     const char *name;
     void *context;
 
-    int (*mount)(struct filesystem *fs, blockdevice_t *device);
+    int (*mount)(struct filesystem *fs, blockdevice_t *device, bool pending);
     int (*unmount)(struct filesystem *fs);
     int (*format)(struct filesystem *fs, blockdevice_t *device);
 
