@@ -4,8 +4,8 @@ target_link_libraries(default_fs PRIVATE pico_stdlib)
 pico_enable_stdio_usb(default_fs 1)
 pico_add_extra_outputs(default_fs)
 
-# use default file system
-pico_enable_filesystem(default_fs FS_SIZE 524288)
+# enable file system
+pico_enable_filesystem(default_fs)
 
 # Additional sources of initialisation functions can be added to customise the file system configuration.
 #

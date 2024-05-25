@@ -65,7 +65,6 @@ static mountpoint_t *find_mountpoint(const char *path) {
     return longest_match;
 }
 
-
 int fs_format(filesystem_t *fs, blockdevice_t *device) {
     return fs->format(fs, device);
 }
@@ -320,3 +319,9 @@ struct dirent *readdir(DIR *dir) {
 char *fs_strerror(int error) {
     return strerror(-error);
 }
+
+#if defined(PICO_FS_AUTO_INIT)
+void __attribute__((constructor)) pre_main(void) {
+    fs_init();
+}
+#endif

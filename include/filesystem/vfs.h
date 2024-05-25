@@ -14,8 +14,8 @@ extern "C" {
 #include "blockdevice/blockdevice.h"
 
 
-#if !defined(DEFAULT_FS_SIZE)
-#define DEFAULT_FS_SIZE    (1408 * 1024)   // Can share storage with MicroPython for RP2
+#if !defined(PICO_FS_DEFAULT_SIZE)
+#define PICO_FS_DEFAULT_SIZE         (1408 * 1024)   // Can share storage with MicroPython for RP2
 #endif
 
 /** Enable predefined file systems
