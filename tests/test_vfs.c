@@ -72,6 +72,46 @@ static void test_api_file_open_close() {
     printf(COLOR_GREEN("ok\n"));
 }
 
+static void test_api_file_open_many() {
+    test_printf("open many files");
+
+    int fd = open("/file", O_WRONLY|O_CREAT);
+    assert(fd == 0);
+
+    int err = close(fd);
+    assert(err == 0);
+
+    int fd1 = open("/file", O_WRONLY|O_CREAT);
+    assert(fd1 == 0);
+    int fd2 = open("/file2", O_WRONLY|O_CREAT);
+    assert(fd2 == 1);
+    int fd3 = open("/file3", O_WRONLY|O_CREAT);
+    assert(fd3 == 2);
+    int fd4 = open("/file4", O_WRONLY|O_CREAT);
+    assert(fd4 == 3);
+    int fd5 = open("/file5", O_WRONLY|O_CREAT);
+    assert(fd5 == 4);
+
+    err = close(fd5);
+    assert(err == 0);
+    err = close(fd4);
+    assert(err == 0);
+    err = close(fd3);
+    assert(err == 0);
+    err = close(fd2);
+    assert(err == 0);
+    err = close(fd1);
+    assert(err == 0);
+
+    int fd6 = open("/file6", O_WRONLY|O_CREAT);
+    assert(fd6 == 0);
+    err = close(fd6);
+    assert(err == 0);
+
+    printf(COLOR_GREEN("ok\n"));
+}
+
+
 static void test_api_file_write_read() {
     test_printf("write,read");
 
@@ -205,6 +245,44 @@ static void test_api_dir_open() {
     err = closedir(dir);
     assert(err == 0);
 
+    printf(COLOR_GREEN("ok\n"));
+}
+
+static void test_api_dir_open_many() {
+    test_printf("opendir many dir");
+
+    int err = mkdir("/dir1", 0777);
+    assert((err == 0) || (err -1 && errno == EEXIST));
+    err = mkdir("/dir2", 0777);
+    assert((err == 0) || (err -1 && errno == EEXIST));
+    err = mkdir("/dir3", 0777);
+    assert((err == 0) || (err -1 && errno == EEXIST));
+    err = mkdir("/dir4", 0777);
+    assert((err == 0) || (err -1 && errno == EEXIST));
+    err = mkdir("/dir5", 0777);
+    assert((err == 0) || (err -1 && errno == EEXIST));
+
+    DIR *dir1 = opendir("/dir1");
+    assert(dir1 != NULL);
+    DIR *dir2 = opendir("/dir2");
+    assert(dir2 != NULL);
+    DIR *dir3 = opendir("/dir3");
+    assert(dir3 != NULL);
+    DIR *dir4 = opendir("/dir4");
+    assert(dir4 != NULL);
+    DIR *dir5 = opendir("/dir5");
+    assert(dir5 != NULL);
+
+    err = closedir(dir5);
+    assert(err == 0);
+    err = closedir(dir4);
+    assert(err == 0);
+    err = closedir(dir3);
+    assert(err == 0);
+    err = closedir(dir2);
+    assert(err == 0);
+    err = closedir(dir1);
+    assert(err == 0);
     printf(COLOR_GREEN("ok\n"));
 }
 
@@ -350,6 +428,7 @@ void test_vfs(void) {
     test_api_format(fat, flash);
     test_api_mount(fat, flash);
     test_api_file_open_close();
+    test_api_file_open_many();
     test_api_file_write_read();
     test_api_file_seek();
     test_api_file_tell();
@@ -358,6 +437,7 @@ void test_vfs(void) {
     test_api_remove();
     test_api_rename();
     test_api_dir_open();
+    test_api_dir_open_many();
     test_api_dir_read();
     test_api_unmount();
 
@@ -377,6 +457,7 @@ void test_vfs(void) {
     test_api_format(lfs, flash);
     test_api_mount(lfs, flash);
     test_api_file_open_close();
+    test_api_file_open_many();
     test_api_file_write_read();
     test_api_file_seek();
     test_api_file_tell();
@@ -385,6 +466,7 @@ void test_vfs(void) {
     test_api_remove();
     test_api_rename();
     test_api_dir_open();
+    test_api_dir_open_many();
     test_api_dir_read();
     test_api_unmount();
 

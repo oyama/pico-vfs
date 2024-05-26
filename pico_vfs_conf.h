@@ -1,1 +1,3 @@
+#if !defined(PICO_VFS_FAT_CHAN_FF_VOLUMES)
 #define PICO_VFS_FAT_CHAN_FF_VOLUMES  4
+#endif
