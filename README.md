@@ -65,7 +65,7 @@ The file system is an object implementing `filesystem_t`, which contains callbac
 
 ### VFS layer
 
-Block devices and file systems are integrated into the POSIX file API by the VFS layer. Users can perform operations like `open()`, `read()`, and `write()` as usual, and also use higher-level functions such as `fopen()`, `fprintf()`, and `fgets()`. The available POSIX and C standard file APIs are listed in [STANDARD.md](STANDARD.md). File mounting and formatting APIs not defined in POSIX are provided under the `fs_*()` namespace.
+Block devices and file systems are integrated into the POSIX file API by the VFS layer. Users can perform operations like `open()`, `read()`, and `write()` as usual, and also use higher-level functions such as `fopen()`, `fprintf()`, and `fgets()`. The available POSIX and C standard file APIs are listed in [STANDARD.md](STANDARD.md). See [API.md](API.md) for file system management APIs not defined in POSIX.
 
 - [src/filesystem/vfs.c](src/filesystem/vfs.c): Virtual file system layer
 
