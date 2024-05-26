@@ -5,6 +5,7 @@
 #include <hardware/flash.h>
 #include <hardware/regs/addressmap.h>
 #include <hardware/sync.h>
+#include <pico/mutex.h>
 #include <stdio.h>
 #include <string.h>
 #include "blockdevice/flash.h"
@@ -13,6 +14,7 @@
 typedef struct {
     uint32_t start;
     size_t length;
+    mutex_t _mutex;
 } blockdevice_flash_config_t;
 
 static const char DEVICE_NAME[] = "flash";
@@ -37,22 +39,36 @@ static int sync(blockdevice_t *device) {
 }
 
 static int read(blockdevice_t *device, const void *buffer, size_t addr, size_t size) {
+    blockdevice_flash_config_t *config = device->config;
+    mutex_enter_blocking(&config->_mutex);
+
     const uint8_t *flash_contents = (const uint8_t *)(XIP_BASE + flash_target_offset(device) + addr);
     memcpy((uint8_t *)buffer, flash_contents, size);
+    mutex_exit(&config->_mutex);
     return BD_ERROR_OK;
 }
 
 static int erase(blockdevice_t *device, size_t addr, size_t size) {
+    blockdevice_flash_config_t *config = device->config;
+    mutex_enter_blocking(&config->_mutex);
+
     uint32_t ints = save_and_disable_interrupts();
     flash_range_erase(flash_target_offset(device) + addr, size);
     restore_interrupts(ints);
+
+    mutex_exit(&config->_mutex);
     return BD_ERROR_OK;
 }
 
 static int program(blockdevice_t *device, const void *buffer, size_t addr, size_t size) {
+    blockdevice_flash_config_t *config = device->config;
+    mutex_enter_blocking(&config->_mutex);
+
     uint32_t ints = save_and_disable_interrupts();
     flash_range_program(flash_target_offset(device) + addr, buffer, size);
     restore_interrupts(ints);
+
+    mutex_exit(&config->_mutex);
     return BD_ERROR_OK;
 }
 
@@ -96,6 +112,7 @@ blockdevice_t *blockdevice_flash_create(uint32_t start, size_t length) {
 
     config->start = start;
     config->length = length > 0 ? length : (PICO_FLASH_SIZE_BYTES - start);
+    mutex_init(&config->_mutex);
     device->config = config;
     device->init(device);
     return device;

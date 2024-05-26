@@ -8,6 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <pico/mutex.h>
 #include "blockdevice/blockdevice.h"
 #include "filesystem/fat.h"
 #include "pico_vfs_conf.h"
@@ -22,6 +23,8 @@ typedef struct {
 typedef struct {
     FATFS fatfs;
     int id;
+    mutex_t _mutex;
+    mutex_t _mutex_format;
 } filesystem_fat_context_t;
 
 static const char FILESYSTEM_NAME[] = "FAT";
@@ -191,6 +194,8 @@ DWORD get_fattime(void) {
 
 static int mount(filesystem_t *fs, blockdevice_t *device, bool pending) {
     filesystem_fat_context_t *context = fs->context;
+    mutex_enter_blocking(&context->_mutex);
+
     char _fsid[3] = {0};
 
     for (size_t i = 0; i < FF_VOLUMES; i++) {
@@ -201,36 +206,49 @@ static int mount(filesystem_t *fs, blockdevice_t *device, bool pending) {
             _fsid[1] = ':';
             _fsid[2] = '\0';
             FRESULT res = f_mount(&context->fatfs, _fsid, !pending);
+            mutex_exit(&context->_mutex);
             return fat_error_remap(res);
         }
     }
+    mutex_exit(&context->_mutex);
     return -ENOMEM;
 }
 
 static int unmount(filesystem_t *fs) {
     filesystem_fat_context_t *context = fs->context;
+    mutex_enter_blocking(&context->_mutex);
+
     char _fsid[3] = "0:";
     _fsid[0] = '0' + context->id;
 
     FRESULT res = f_mount(NULL, _fsid, 0);
     int err = _ffs[context->id]->deinit(_ffs[context->id]);
     if (err) {
+        mutex_exit(&context->_mutex);
         return err;
     }
     _ffs[context->id] = NULL;
+
+    mutex_exit(&context->_mutex);
     return fat_error_remap(res);
 }
 
 static int format(filesystem_t *fs, blockdevice_t *device) {
+    filesystem_fat_context_t *context = fs->context;
+    mutex_enter_blocking(&context->_mutex_format);
+
     int err = device->init(device);
-    if (err)
+    if (err) {
+        mutex_exit(&context->_mutex_format);
         return err;
+    }
 
     // erase first handful of blocks
     size_t header = 2 * device->erase_size;
     err = device->erase(device, 0, header);
     if (err) {
         device->deinit(device);
+        mutex_exit(&context->_mutex_format);
         return err;
     }
 
@@ -238,6 +256,7 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     void *buffer = malloc(program_size);
     if (!buffer) {
         device->deinit(device);
+        mutex_exit(&context->_mutex_format);
         return -ENOMEM;
     }
     memset(buffer, 0xFF, program_size);
@@ -246,6 +265,7 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
         if (err) {
             free(buffer);
             device->deinit(device);
+            mutex_exit(&context->_mutex_format);
             return err;
         }
     }
@@ -255,20 +275,24 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     err = device->trim(device, 0, device->size(device));
     if (err) {
         device->deinit(device);
+        mutex_exit(&context->_mutex_format);
         return err;
     }
 
     err = device->deinit(device);
     if (err) {
         printf("deinit error=%d\n", err);
+        mutex_exit(&context->_mutex_format);
         return err;
     }
 
     err = fs->mount(fs, device, true);
     if (err) {
         printf("mount error=%d\n", err);
+        mutex_exit(&context->_mutex_format);
         return err;
     }
+
 
     MKFS_PARM opt;
     opt.fmt = (FM_ANY | FM_SFD);
@@ -277,20 +301,24 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     opt.n_root = 0U;
     opt.au_size = 0; // (DWORD)cluster_size;
 
-    filesystem_fat_context_t *context = fs->context;
     char id[3] = "0:";
     id[0] = '0' + context->id;
+
     FRESULT res = f_mkfs((const TCHAR *)id, &opt, NULL, FF_MAX_SS);
+
     if (res != FR_OK) {
         fs->unmount(fs);
+        mutex_exit(&context->_mutex_format);
         return fat_error_remap(res);
     }
 
     err = fs->unmount(fs);
     if (err) {
+        mutex_exit(&context->_mutex_format);
         return res;
     }
 
+    mutex_exit(&context->_mutex_format);
     return 0;
 }
 
@@ -308,10 +336,14 @@ static const char *fat_path_prefix(char *dist, int id, const char *path) {
 
 static int file_remove(filesystem_t *fs, const char *path) {
     filesystem_fat_context_t *context = fs->context;
+
     char fpath[PATH_MAX];
     fat_path_prefix(fpath, context->id, path);
 
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_unlink(fpath);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         debug_if(FFS_DBG, "f_unlink() failed: %d\n", res);
         if (res == FR_DENIED)
@@ -327,7 +359,10 @@ static int file_rename(filesystem_t *fs, const char *oldpath, const char *newpat
     fat_path_prefix(oldfpath, context->id, oldpath);
     fat_path_prefix(newfpath, context->id, newpath);
 
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_rename(oldfpath, newfpath);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         debug_if(FFS_DBG, "f_rename() failed: %d\n", res);
     }
@@ -340,7 +375,10 @@ static int file_mkdir(filesystem_t *fs, const char *path, mode_t mode) {
     char fpath[PATH_MAX];
     fat_path_prefix(fpath, context->id, path);
 
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_mkdir(fpath);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         debug_if(FFS_DBG, "f_mkdir() failed: %d\n", res);
     }
@@ -352,7 +390,11 @@ static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
     char fpath[PATH_MAX];
     fat_path_prefix(fpath, context->id, path);
     FILINFO f = {0};
+
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_stat(fpath, &f);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         return fat_error_remap(res);
     }
@@ -390,7 +432,10 @@ static int file_open(filesystem_t *fs, fs_file_t *file, const char *path, int fl
         return -ENOMEM;
     }
 
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_open(&fat_file->file, fpath, open_mode);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         debug_if(FFS_DBG, "f_open('w') failed: %d\n", res);
         return fat_error_remap(res);
@@ -400,8 +445,13 @@ static int file_open(filesystem_t *fs, fs_file_t *file, const char *path, int fl
 
 static int file_close(filesystem_t *fs, fs_file_t *file) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
     fat_file_t *fat_file = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_close(&fat_file->file);
+    mutex_exit(&context->_mutex);
+
     free(file->context);
     file->context = NULL;
     return fat_error_remap(res);
@@ -409,10 +459,15 @@ static int file_close(filesystem_t *fs, fs_file_t *file) {
 
 static ssize_t file_write(filesystem_t *fs, fs_file_t *file, const void *buffer, size_t size) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
     fat_file_t *fat_file = file->context;
 
     UINT n;
+
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_write(&(fat_file->file), buffer, size, &n);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         debug_if(FFS_DBG, "f_write() failed: %d", res);
         return fat_error_remap(res);
@@ -422,10 +477,15 @@ static ssize_t file_write(filesystem_t *fs, fs_file_t *file, const void *buffer,
 
 static ssize_t file_read(filesystem_t *fs, fs_file_t *file, void *buffer, size_t size) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
     fat_file_t *fat_file = file->context;
 
     UINT n;
+
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_read(&fat_file->file, buffer, size, &n);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         debug_if(FFS_DBG, "f_read() failed: %d\n", res);
         return fat_error_remap(res);
@@ -435,8 +495,13 @@ static ssize_t file_read(filesystem_t *fs, fs_file_t *file, void *buffer, size_t
 
 static int file_sync(filesystem_t *fs, fs_file_t *file) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
     fat_file_t *fat_file = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_sync(&fat_file->file);
+    mutex_exit(&context->_mutex);
+
     if (!res != FR_OK) {
         debug_if(FFS_DBG, "f_sync() failed: %d\n", res);
     }
@@ -445,13 +510,18 @@ static int file_sync(filesystem_t *fs, fs_file_t *file) {
 
 static off_t file_seek(filesystem_t *fs, fs_file_t *file, off_t offset, int whence) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
     fat_file_t *fat_file = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     if (whence == SEEK_END)
         offset += f_size(&fat_file->file);
     else if (whence == SEEK_CUR)
         offset += f_tell(&fat_file->file);
 
     FRESULT res = res = f_lseek(&fat_file->file, offset);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         debug_if(FFS_DBG, "lseek failed: %d\n", res);
         return fat_error_remap(res);
@@ -461,32 +531,48 @@ static off_t file_seek(filesystem_t *fs, fs_file_t *file, off_t offset, int when
 
 static off_t file_tell(filesystem_t *fs, fs_file_t *file) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
     fat_file_t *fat_file = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     off_t res = f_tell(&fat_file->file);
+    mutex_exit(&context->_mutex);
+
     return res;
 }
 
 static off_t file_size(filesystem_t *fs, fs_file_t *file) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
     fat_file_t *fat_file = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     off_t res = f_size(&fat_file->file);
+    mutex_exit(&context->_mutex);
+
     return res;
 }
 
 static int file_truncate(filesystem_t *fs, fs_file_t *file, off_t length) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
     fat_file_t *fat_file = file->context;
 
+    mutex_enter_blocking(&context->_mutex);
     FSIZE_t old_offset = f_tell(&fat_file->file);
     FRESULT res = f_lseek(&fat_file->file, length);
     if (res) {
+        mutex_exit(&context->_mutex);
         return fat_error_remap(res);
     }
     res = f_truncate(&fat_file->file);
     if (res) {
+        mutex_exit(&context->_mutex);
         return fat_error_remap(res);
     }
     res = f_lseek(&fat_file->file, old_offset);
+    mutex_exit(&context->_mutex);
+
     if (res) {
         return fat_error_remap(res);
     }
@@ -503,7 +589,11 @@ static int dir_open(filesystem_t *fs, fs_dir_t *dir, const char *path) {
         fprintf(stderr, "dir_open: Out of memory\n");
         return -ENOMEM;
     }
+
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_opendir(dh, fpath);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         debug_if(FFS_DBG, "f_opendir() failed: %d\n", res);
         free(dh);
@@ -516,18 +606,29 @@ static int dir_open(filesystem_t *fs, fs_dir_t *dir, const char *path) {
 
 static int dir_close(filesystem_t *fs, fs_dir_t *dir) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
+
     FATFS_DIR *dh = (FATFS_DIR *)dir->context;
+
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_closedir(dh);
+    mutex_exit(&context->_mutex);
+
     free(dh);
     return fat_error_remap(res);
 }
 
 static int dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
     (void)fs;
+    filesystem_fat_context_t *context = fs->context;
+
     FATFS_DIR *dh = (FATFS_DIR *)dir->context;
     FILINFO finfo = {0};
 
+    mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_readdir(dh, &finfo);
+    mutex_exit(&context->_mutex);
+
     if (res != FR_OK) {
         return fat_error_remap(res);
     } else if (finfo.fname[0] == 0) {
@@ -576,6 +677,9 @@ filesystem_t *filesystem_fat_create() {
         return NULL;
     }
     context->id = -1;
+    mutex_init(&context->_mutex);
+    mutex_init(&context->_mutex_format);
+
     fs->context = context;
     return fs;
 }

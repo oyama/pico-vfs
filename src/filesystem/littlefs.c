@@ -4,6 +4,7 @@
  */
 #include <errno.h>
 #include <fcntl.h>
+#include <pico/mutex.h>
 #include "lfs.h"
 #include "blockdevice/blockdevice.h"
 #include "filesystem/littlefs.h"
@@ -17,6 +18,7 @@ typedef struct {
     lfs_t littlefs;
     struct lfs_config config;
     int id;
+    mutex_t _mutex;
 } filesystem_littlefs_context_t;
 
 
@@ -133,42 +135,55 @@ static void _init_config(struct lfs_config *config, blockdevice_t *device) {
 }
 
 static int format(filesystem_t *fs, blockdevice_t *device) {
+    filesystem_littlefs_context_t *context = fs->context;
+    mutex_enter_blocking(&context->_mutex);
+
     int err = device->init(device);
     if (err) {
+        mutex_exit(&context->_mutex);
         return err;
     }
 
-    filesystem_littlefs_context_t *context = fs->context;
     _init_config(&context->config, device);
     err = lfs_format(&context->littlefs, &context->config);
     if (err) {
+        mutex_exit(&context->_mutex);
         return _error_remap(err);
     }
     err = device->deinit(device);
     if (err) {
+        mutex_exit(&context->_mutex);
         return err;
     }
+
+    mutex_exit(&context->_mutex);
     return 0;
 }
 
 static int mount(filesystem_t *fs, blockdevice_t *device, bool pending) {
     (void)pending;
     filesystem_littlefs_context_t *context = fs->context;
+    mutex_enter_blocking(&context->_mutex);
+
     int err = device->init(device);
     if (err) {
+        mutex_exit(&context->_mutex);
         return err;
     }
 
     _init_config(&context->config, device);
     err = lfs_mount(&context->littlefs, &context->config);
     if (err) {
+        mutex_exit(&context->_mutex);
         return _error_remap(err);
     }
+    mutex_exit(&context->_mutex);
     return 0;
 }
 
 static int unmount(filesystem_t *fs) {
     filesystem_littlefs_context_t *context = fs->context;
+    mutex_enter_blocking(&context->_mutex);
 
     int res = 0;
     int err = lfs_unmount(&context->littlefs);
@@ -180,33 +195,50 @@ static int unmount(filesystem_t *fs) {
     if (err && !res) {
         res = err;
     }
+
+    mutex_exit(&context->_mutex);
     return res;
 }
 
 static int file_remove(filesystem_t *fs, const char *filename) {
     filesystem_littlefs_context_t *context = fs->context;
+
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_remove(&context->littlefs, filename);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(err);
 }
 
 static int file_rename(filesystem_t *fs, const char *oldpath, const char *newpath) {
     filesystem_littlefs_context_t *context = fs->context;
 
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_rename(&context->littlefs, oldpath, newpath);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(err);
 }
 
 static int file_mkdir(filesystem_t *fs, const char *path, mode_t mode) {
     (void)mode;
     filesystem_littlefs_context_t *context = fs->context;
+
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_mkdir(&context->littlefs, path);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(err);
 }
 
 static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
     filesystem_littlefs_context_t *context = fs->context;
     struct lfs_info info;
+
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_stat(&context->littlefs, path, &info);
+    mutex_exit(&context->_mutex);
+
     st->st_size = info.size;
     st->st_mode = _mode_remap(info.type);
     return _error_remap(err);
@@ -220,7 +252,11 @@ static int file_open(filesystem_t *fs, fs_file_t *file, const char *path, int fl
         fprintf(stderr, "file_open: Out of memory\n");
         return -ENOMEM;
     }
+
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_file_open(&context->littlefs, &f->file, path, _flags_remap(flags));
+    mutex_exit(&context->_mutex);
+
     if (err) {
         free(f);
     }
@@ -230,7 +266,11 @@ static int file_open(filesystem_t *fs, fs_file_t *file, const char *path, int fl
 static int file_close(filesystem_t *fs, fs_file_t *file) {
     filesystem_littlefs_context_t *context = fs->context;
     littlefs_file_t *f = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_file_close(&context->littlefs, &f->file);
+    mutex_exit(&context->_mutex);
+
     free(f);
     file->context = NULL;
     return _error_remap(err);
@@ -239,49 +279,77 @@ static int file_close(filesystem_t *fs, fs_file_t *file) {
 static int file_read(filesystem_t *fs, fs_file_t *file, void *buffer, size_t len) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     lfs_ssize_t res = lfs_file_read(&context->littlefs, f, buffer, len);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(res);
 }
 
 static int file_write(filesystem_t *fs, fs_file_t *file, const void *buffer, size_t len) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     lfs_ssize_t res = lfs_file_write(&context->littlefs, f, buffer, len);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(res);
 }
 
 static int file_sync(filesystem_t *fs, fs_file_t *file) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_file_sync(&context->littlefs, f);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(err);
 }
 
 static off_t file_seek(filesystem_t *fs, fs_file_t *file, off_t offset, int whence) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     off_t res = lfs_file_seek(&context->littlefs, f, offset, _whence_remap(whence));
+    mutex_exit(&context->_mutex);
+
     return _error_remap(res);
 }
 
 static off_t file_tell(filesystem_t *fs, fs_file_t *file) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     off_t res = lfs_file_tell(&context->littlefs, f);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(res);
 }
 
 static off_t file_size(filesystem_t *fs, fs_file_t *file) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     off_t res = lfs_file_size(&context->littlefs, f);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(res);
 }
 
 static int file_truncate(filesystem_t *fs, fs_file_t *file, off_t length) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
+
+    mutex_enter_blocking(&context->_mutex);
     off_t res = lfs_file_truncate(&context->littlefs, f, length);
+    mutex_exit(&context->_mutex);
+
     return _error_remap(res);
 }
 
@@ -292,7 +360,11 @@ static int dir_open(filesystem_t *fs, fs_dir_t *dir, const char *path) {
         fprintf(stderr, "dir_open: Out of memory\n");
         return -ENOMEM;
     }
+
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_dir_open(&context->littlefs, d, path);
+    mutex_exit(&context->_mutex);
+
     if (!err) {
         dir->context = d;
         dir->fd = -1;
@@ -305,7 +377,11 @@ static int dir_open(filesystem_t *fs, fs_dir_t *dir, const char *path) {
 static int dir_close(filesystem_t *fs, fs_dir_t *dir) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_dir_t *d = dir->context;
+
+    mutex_enter_blocking(&context->_mutex);
     int err = lfs_dir_close(&context->littlefs, d);
+    mutex_exit(&context->_mutex);
+
     free(d);
     return _error_remap(err);
 }
@@ -314,7 +390,11 @@ static int dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_dir_t *d = dir->context;
     struct lfs_info info;
+
+    mutex_enter_blocking(&context->_mutex);
     int res = lfs_dir_read(&context->littlefs, d, &info);
+    mutex_exit(&context->_mutex);
+
     if (res == 1) {
         ent->d_type = _type_remap(info.type);
         strcpy(ent->d_name, info.name);
@@ -365,6 +445,7 @@ filesystem_t *filesystem_littlefs_create(uint32_t block_cycles,
     context->id = -1;
     context->config.block_cycles = block_cycles;
     context->config.lookahead_size = lookahead_size;
+    mutex_init(&context->_mutex);
     fs->context = context;
     return fs;
 }
