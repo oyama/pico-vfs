@@ -407,11 +407,46 @@ static void test_api_stat() {
     printf(COLOR_GREEN("ok\n"));
 }
 
+static void test_api_reformat(void) {
+    test_printf("fs_reformat");
+
+    int fd = open("/file", O_WRONLY|O_CREAT);
+    assert(fd >= 0);
+    char write_buffer[512] = "Hello World!";
+    ssize_t write_length = write(fd, write_buffer, strlen(write_buffer));
+    assert((size_t)write_length == strlen(write_buffer));
+    int err = close(fd);
+    assert(err == 0);
+
+    err = fs_reformat("/");
+    assert(err == 0);
+
+    struct stat finfo;
+    err = stat("/file", &finfo);
+    assert(err == -1);
+    assert(errno == ENOENT);
+
+    printf(COLOR_GREEN("ok\n"));
+}
+
 static void test_api_unmount(void) {
     test_printf("fs_unmount");
 
     int err = fs_unmount("/");
     assert(err == 0);
+
+    printf(COLOR_GREEN("ok\n"));
+}
+
+static void test_api_mount_unmount_repeat(filesystem_t *fs, blockdevice_t *device) {
+    test_printf("fs_mount,fs_unmount repeat");
+
+    for (size_t i = 0; i < 20; i++) {
+        int err = fs_mount("/", fs, device);
+        assert(err == 0);
+        err = fs_unmount("/");
+        assert(err == 0);
+    }
 
     printf(COLOR_GREEN("ok\n"));
 }
@@ -439,7 +474,9 @@ void test_vfs(void) {
     test_api_dir_open();
     test_api_dir_open_many();
     test_api_dir_read();
+    test_api_reformat();
     test_api_unmount();
+    test_api_mount_unmount_repeat(fat, flash);
 
     cleanup(flash);
     blockdevice_flash_free(flash);
@@ -468,7 +505,9 @@ void test_vfs(void) {
     test_api_dir_open();
     test_api_dir_open_many();
     test_api_dir_read();
+    test_api_reformat();
     test_api_unmount();
+    test_api_mount_unmount_repeat(lfs, flash);
 
     cleanup(flash);
     blockdevice_flash_free(flash);
