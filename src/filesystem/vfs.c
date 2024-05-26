@@ -16,20 +16,22 @@ typedef struct {
 } mountpoint_t;
 
 typedef struct {
-    fs_file_t file;
+    fs_file_t *file;
     filesystem_t *filesystem;
 } file_descriptor_t;
 
 typedef struct {
-    fs_dir_t dir;
+    fs_dir_t *dir;
     filesystem_t *filesystem;
 } dir_descriptor_t;
 
 
 #define FS_MOUNTPOINT_NUM   10
-static mountpoint_t mountpoints[FS_MOUNTPOINT_NUM] = {0};
-static file_descriptor_t file_descriptors[10] = {0};
-static dir_descriptor_t dir_descriptors[10] = {0};
+static mountpoint_t mountpoints[FS_MOUNTPOINT_NUM] = {0};  // Mount points and file system map
+static size_t max_file_descriptor = 0;                     // File descriptor current maximum value
+static file_descriptor_t *file_descriptor = NULL;          // File descriptor and file system map
+static size_t max_dir_descriptor = 0;                      // Dir descriptor current maximum value
+static dir_descriptor_t *dir_descriptor = NULL;            // Dir descriptor and file system map
 static mutex_t __attribute__((unused)) _mutex;
 
 static int _error_remap(int err) {
@@ -51,7 +53,6 @@ static const char *remove_prefix(const char *str, const char *prefix) {
     }
     return str + len_prefix;
 }
-
 
 static mountpoint_t *find_mountpoint(const char *path) {
     mountpoint_t *longest_match = NULL;
@@ -152,7 +153,7 @@ int mkdir(const char *path, mode_t mode) {
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         mutex_exit(&_mutex);
-        return -ENOENT;
+        return _error_remap(-ENOENT);
     }
     const char *entity_path = remove_prefix(path, mp->dir);
     filesystem_t *fs = mp->filesystem;
@@ -180,8 +181,8 @@ int _fstat(int fildes, struct stat *st) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    fs_file_t *file = &file_descriptors[fildes].file;
-    filesystem_t *fs = file_descriptors[fildes].filesystem;
+    fs_file_t *file = file_descriptor[fildes].file;
+    filesystem_t *fs = file_descriptor[fildes].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -201,6 +202,73 @@ int _fstat(int fildes, struct stat *st) {
     return _error_remap(0);
 }
 
+static int _assign_file_descriptor(void) {
+    int fd = -1;
+    if (max_file_descriptor == 0) {
+        max_file_descriptor = 2;
+        file_descriptor = calloc(max_file_descriptor, sizeof(file_descriptor_t));
+        if (file_descriptor == NULL) {
+            printf("_open: Out of memory\n");
+            return -1;
+        }
+    }
+    for (size_t i = 0; i < max_file_descriptor; i++) {
+        if (file_descriptor[i].filesystem == NULL) {
+            fd = i;
+            break;
+        }
+    }
+    if (fd == -1) {
+        // Extend the management array
+        size_t last_max = max_file_descriptor;
+        max_file_descriptor *= 2;
+        file_descriptor = realloc(file_descriptor, sizeof(file_descriptor_t) * max_file_descriptor);
+        if (file_descriptor == NULL) {
+            printf("_open: Out of memory\n");
+            return -1;
+        }
+        for (size_t i = last_max; i < max_file_descriptor; i++) {
+            file_descriptor[i].filesystem = NULL;
+            file_descriptor[i].file = NULL;
+        }
+        fd = last_max;
+    }
+    return fd;
+}
+
+static int _assign_dir_descriptor(void) {
+    int fd = -1;
+    if (max_dir_descriptor == 0) {
+        max_dir_descriptor = 2;
+        dir_descriptor = calloc(max_dir_descriptor, sizeof(dir_descriptor_t));
+        if (dir_descriptor == NULL) {
+            printf("_opendir: Out of memory\n");
+            return -1;
+        }
+    }
+    for (size_t i = 0; i < max_dir_descriptor; i++) {
+        if (dir_descriptor[i].filesystem == NULL) {
+            fd = i;
+            break;
+        }
+    }
+    if (fd == -1) {
+        // Extend the management array
+        size_t last_max = max_dir_descriptor;
+        max_dir_descriptor *= 2;
+        dir_descriptor = realloc(dir_descriptor, sizeof(dir_descriptor_t) * max_dir_descriptor);
+        if (dir_descriptor == NULL) {
+            printf("_opendir: Out of memory\n");
+            return -1;
+        }
+        for (size_t i = last_max; i < max_dir_descriptor; i++) {
+            dir_descriptor[i].filesystem = NULL;
+            dir_descriptor[i].dir = NULL;
+        }
+        fd = (int)last_max;
+    }
+    return fd;
+}
 
 int _open(const char *path, int oflags, ...) {
     auto_init_mutex(_mutex);
@@ -213,21 +281,27 @@ int _open(const char *path, int oflags, ...) {
     }
     const char *entity_path = remove_prefix(path, mp->dir);
     // find file descriptor
-    int fd = -1;
-    for (int i = 0; i < 10; i++) {
-        if (file_descriptors[i].filesystem == NULL) {
-            fd = i;
-            break;
-        }
+    int fd = _assign_file_descriptor();
+    if (fd == -1) {
+        mutex_exit(&_mutex);
+        return _error_remap(-ENFILE);
     }
+
     filesystem_t *fs = mp->filesystem;
-    fs_file_t *file = &file_descriptors[fd].file;
+    fs_file_t *file = file_descriptor[fd].file = calloc(1, sizeof(fs_file_t));
+    if (file == NULL) {
+        mutex_exit(&_mutex);
+        return _error_remap(-ENOMEM);
+    }
+
     int err = fs->file_open(fs, file, entity_path, oflags);
     if (err < 0) {
+        free(file);
+        file_descriptor[fd].file = NULL;
         mutex_exit(&_mutex);
         return _error_remap(err);
     }
-    file_descriptors[fd].filesystem = fs;
+    file_descriptor[fd].filesystem = fs;
     mutex_exit(&_mutex);
 
     return _error_remap(fd);
@@ -237,16 +311,22 @@ int _close(int fildes) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    fs_file_t *file = &file_descriptors[fildes].file;
-    filesystem_t *fs = file_descriptors[fildes].filesystem;
+    if ((int)max_file_descriptor <= fildes) {
+        mutex_exit(&_mutex);
+        return _error_remap(-EBADF);
+    }
+    fs_file_t *file = file_descriptor[fildes].file;
+    filesystem_t *fs = file_descriptor[fildes].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
     int err = fs->file_close(fs, file);
-    file_descriptors[fildes].filesystem = NULL;
-    mutex_exit(&_mutex);
+    free(file);
+    file_descriptor[fildes].filesystem = NULL;
+    file_descriptor[fildes].file = NULL;
 
+    mutex_exit(&_mutex);
     return _error_remap(err);
 }
 
@@ -254,8 +334,12 @@ ssize_t _write(int fildes, const void *buf, size_t nbyte) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    fs_file_t *file = &file_descriptors[fildes].file;
-    filesystem_t *fs = file_descriptors[fildes].filesystem;
+    if ((int)max_file_descriptor <= fildes) {
+        mutex_exit(&_mutex);
+        return _error_remap(-EBADF);
+    }
+    fs_file_t *file = file_descriptor[fildes].file;
+    filesystem_t *fs = file_descriptor[fildes].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -270,8 +354,12 @@ ssize_t _read(int fildes, void *buf, size_t nbyte) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    fs_file_t *file = &file_descriptors[fildes].file;
-    filesystem_t *fs = file_descriptors[fildes].filesystem;
+    if ((int)max_file_descriptor <= fildes) {
+        mutex_exit(&_mutex);
+        return _error_remap(-EBADF);
+    }
+    fs_file_t *file = file_descriptor[fildes].file;
+    filesystem_t *fs = file_descriptor[fildes].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -287,8 +375,12 @@ off_t _lseek(int fildes, off_t offset, int whence) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    fs_file_t *file = &file_descriptors[fildes].file;
-    filesystem_t *fs = file_descriptors[fildes].filesystem;
+    if ((int)max_file_descriptor <= fildes) {
+        mutex_exit(&_mutex);
+        return _error_remap(-EBADF);
+    }
+    fs_file_t *file = file_descriptor[fildes].file;
+    filesystem_t *fs = file_descriptor[fildes].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -303,11 +395,15 @@ off_t _lseek(int fildes, off_t offset, int whence) {
 off_t _ftello_r(struct _reent *ptr, register FILE *fp) {
     (void)ptr;
     int fildes = fp->_file;
-
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
-    fs_file_t *file = &file_descriptors[fildes].file;
-    filesystem_t *fs = file_descriptors[fildes].filesystem;
+
+    if ((int)max_file_descriptor <= fildes) {
+        mutex_exit(&_mutex);
+        return _error_remap(-EBADF);
+    }
+    fs_file_t *file = file_descriptor[fildes].file;
+    filesystem_t *fs = file_descriptor[fildes].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -323,8 +419,12 @@ int ftruncate(int fildes, off_t length) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    fs_file_t *file = &file_descriptors[fildes].file;
-    filesystem_t *fs = file_descriptors[fildes].filesystem;
+    if ((int)max_file_descriptor <= fildes) {
+        mutex_exit(&_mutex);
+        return _error_remap(-EBADF);
+    }
+    fs_file_t *file = file_descriptor[fildes].file;
+    filesystem_t *fs = file_descriptor[fildes].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -342,27 +442,35 @@ DIR *opendir(const char *path) {
 
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
+        _error_remap(-ENOENT);
         mutex_exit(&_mutex);
         return NULL;
     }
     const char *entity_path = remove_prefix(path, mp->dir);
     // find dir descriptor
-    int fd = -1;
-    for (int i = 0; i < 10; i++) {
-        if (dir_descriptors[i].filesystem == NULL) {
-            fd = i;
-            break;
-        }
+    int fd = _assign_dir_descriptor();
+    if (fd == -1) {
+        _error_remap(-ENFILE);
+        mutex_exit(&_mutex);
+        return NULL;
     }
-    fs_dir_t *dir = &dir_descriptors[fd].dir;
+
+    fs_dir_t *dir = dir_descriptor[fd].dir = calloc(1, sizeof(fs_dir_t));
+    if (dir == NULL) {
+        _error_remap(-ENOMEM);
+        mutex_exit(&_mutex);
+        return NULL;
+    }
     filesystem_t *fs = mp->filesystem;
     int err = fs->dir_open(fs, dir, entity_path);
     if (err != 0) {
+        free(dir);
+        dir_descriptor[fd].dir = NULL;
         _error_remap(err);
         mutex_exit(&_mutex);
         return NULL;
     }
-    dir_descriptors[fd].filesystem = fs;
+    dir_descriptor[fd].filesystem = fs;
     dir->fd = fd;
     mutex_exit(&_mutex);
 
@@ -374,14 +482,16 @@ int closedir(DIR *dir) {
     mutex_enter_blocking(&_mutex);
 
     int fd = dir->fd;
-    fs_dir_t *_dir = &dir_descriptors[fd].dir;
-    filesystem_t *fs = dir_descriptors[fd].filesystem;
+    fs_dir_t *_dir = dir_descriptor[dir->fd].dir;
+    filesystem_t *fs = dir_descriptor[dir->fd].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
     int err = fs->dir_close(fs, _dir);
-    dir_descriptors[fd].filesystem = NULL;
+    dir_descriptor[fd].filesystem = NULL;
+    free(dir_descriptor[fd].dir);
+    dir_descriptor[fd].dir = NULL;
     mutex_exit(&_mutex);
     return _error_remap(err);
 }
@@ -390,9 +500,10 @@ struct dirent *readdir(DIR *dir) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    fs_dir_t *_dir = &dir_descriptors[dir->fd].dir;
-    filesystem_t *fs = dir_descriptors[dir->fd].filesystem;
+    fs_dir_t *_dir = dir_descriptor[dir->fd].dir;
+    filesystem_t *fs = dir_descriptor[dir->fd].filesystem;
     if (fs == NULL) {
+        _error_remap(-EBADF);
         mutex_exit(&_mutex);
         return NULL;
     }
