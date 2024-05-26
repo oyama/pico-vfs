@@ -13,6 +13,7 @@
 typedef struct {
     const char *dir;
     void *filesystem;
+    void *device;
 } mountpoint_t;
 
 typedef struct {
@@ -83,6 +84,7 @@ int fs_mount(const char *dir, filesystem_t *fs, blockdevice_t *device) {
     for (size_t i = 0; i < FS_MOUNTPOINT_NUM; i++) {
         if (mountpoints[i].filesystem == NULL) {
             mountpoints[i].filesystem = fs;
+            mountpoints[i].device = device;
             mountpoints[i].dir = strdup(dir);
             mutex_exit(&_mutex);
             return _error_remap(0);
@@ -95,6 +97,7 @@ int fs_mount(const char *dir, filesystem_t *fs, blockdevice_t *device) {
 int fs_unmount(const char *path) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
+
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         mutex_exit(&_mutex);
@@ -108,9 +111,39 @@ int fs_unmount(const char *path) {
     }
 
     mp->filesystem = NULL;
+    mp->device = NULL;
     free((char *)mp->dir);
+
     mutex_exit(&_mutex);
     return _error_remap(0);
+}
+
+int fs_reformat(const char *path) {
+    auto_init_mutex(_mutex);
+    mutex_enter_blocking(&_mutex);
+
+    mountpoint_t *mp = find_mountpoint(path);
+    if (mp == NULL) {
+        mutex_exit(&_mutex);
+        return _error_remap(-ENOENT);
+    }
+    filesystem_t *fs = mp->filesystem;
+    blockdevice_t *device = mp->device;
+
+    int err = fs->unmount(fs);
+    if (err) {
+        mutex_exit(&_mutex);
+        return _error_remap(err);
+    }
+    err = fs->format(fs, device);
+    if (err) {
+        mutex_exit(&_mutex);
+        return _error_remap(err);
+    }
+    err = fs->mount(fs, device, false);
+
+    mutex_exit(&_mutex);
+    return _error_remap(err);
 }
 
 int _unlink(const char *path) {

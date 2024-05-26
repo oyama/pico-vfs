@@ -61,6 +61,16 @@ int fs_mount(const char *path, filesystem_t *fs, blockdevice_t *device);
  */
 int fs_unmount(const char *path);
 
+/** Reformat the mounted file system
+ *
+ * Reformat a file system mounted at the specified path.
+ *
+ * @param path Directory path of the mount point. Must be the same as the path specified for the mount.
+ * @retval 0 Reformat suceeded.
+ * @retval <0 Reformat failed. Negative integer value indicates an error code.
+ */
+int fs_reformat(const char *path);
+
 /** File system error message
  *
  * Convert the error code reported in the negative integer into a string.
