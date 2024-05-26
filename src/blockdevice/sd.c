@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <inttypes.h>
 #include <hardware/clocks.h>
+#include <pico/mutex.h>
 #include <pico/stdlib.h>
 #include "blockdevice/sd.h"
 
@@ -28,6 +29,7 @@ typedef struct {
     size_t block_size;
     size_t erase_size;
     size_t total_sectors;
+    mutex_t _mutex;
 } blockdevice_sd_config_t;
 
 #ifndef CONF_SD_CMD_TIMEOUT
@@ -671,31 +673,38 @@ static int _freq(void *_config) {
 
 static int init(blockdevice_t *device) {
     blockdevice_sd_config_t *config = device->config;
+    mutex_enter_blocking(&config->_mutex);
+
     int err = init_card(config);
     config->is_initialized = (err == BD_ERROR_OK);
     if (!config->is_initialized) {
         debug_if(SD_DBG, "Fail to initialize card\n");
+        mutex_exit(&config->_mutex);
         return err;
     }
     debug_if(SD_DBG, "init card = %d\n", config->is_initialized);
     config->total_sectors = _sd_sectors(config);
     // CMD9 failed
     if (0 == config->total_sectors) {
+        mutex_exit(&config->_mutex);
         return BD_ERROR_DEVICE_ERROR;
     }
 
     // Set block length to 512 (CMD16)
     if (_cmd(config, CMD16_SET_BLOCKLEN, config->block_size, 0, NULL) != 0) {
         debug_if(SD_DBG, "Set %" PRIu32 "-byte block timed out\n", config->block_size);
+        mutex_exit(&config->_mutex);
         return BD_ERROR_DEVICE_ERROR;
     }
 
     // Set SCK for data transfer
     err = _freq(config);
     if (err) {
+        mutex_exit(&config->_mutex);
         return err;
     }
 
+    mutex_exit(&config->_mutex);
     return BD_ERROR_OK;
 }
 
@@ -753,12 +762,15 @@ static int _read(void *_config, uint8_t *buffer, uint32_t length) {
 
 static int read(blockdevice_t *device, const void *_buffer, size_t addr, size_t size) {
     blockdevice_sd_config_t *config = device->config;
+    mutex_enter_blocking(&config->_mutex);
 
     if (!is_valid_read(device, addr, size)) {
+        mutex_exit(&config->_mutex);
         return SD_BLOCK_DEVICE_ERROR_PARAMETER;
     }
 
     if (!config->is_initialized) {
+        mutex_exit(&config->_mutex);
         return SD_BLOCK_DEVICE_ERROR_PARAMETER;
     }
 
@@ -779,6 +791,7 @@ static int read(blockdevice_t *device, const void *_buffer, size_t addr, size_t 
         status = _cmd(config, CMD17_READ_SINGLE_BLOCK, addr, 0, NULL);
     }
     if (BD_ERROR_OK != status) {
+        mutex_exit(&config->_mutex);
         return status;
     }
 
@@ -797,6 +810,8 @@ static int read(blockdevice_t *device, const void *_buffer, size_t addr, size_t 
     if (size > config->block_size) {
         status = _cmd(config, CMD12_STOP_TRANSMISSION, 0x0, 0, NULL);
     }
+
+    mutex_exit(&config->_mutex);
     return status;
 }
 
@@ -835,11 +850,15 @@ static uint8_t _write(void *_config, const uint8_t *buffer, uint8_t token, uint3
 
 static int program(blockdevice_t *device, const void *_buffer, size_t addr, size_t size) {
     blockdevice_sd_config_t *config = device->config;
+    mutex_enter_blocking(&config->_mutex);
+
     if (!is_valid_program(device, addr, size)) {
+        mutex_exit(&config->_mutex);
         return SD_BLOCK_DEVICE_ERROR_PARAMETER;
     }
 
     if (!config->is_initialized) {
+        mutex_exit(&config->_mutex);
         return SD_BLOCK_DEVICE_ERROR_NO_INIT;
     }
 
@@ -860,6 +879,7 @@ static int program(blockdevice_t *device, const void *_buffer, size_t addr, size
     if (block_count == 1) {
         // Single block write command
         if (BD_ERROR_OK != (status = _cmd(config, CMD24_WRITE_BLOCK, addr, 0, NULL))) {
+            mutex_exit(&config->_mutex);
             return status;
         }
 
@@ -877,6 +897,7 @@ static int program(blockdevice_t *device, const void *_buffer, size_t addr, size
 
         // Multiple block write command
         if (BD_ERROR_OK != (status = _cmd(config, CMD25_WRITE_MULTIPLE_BLOCK, addr, 0, NULL))) {
+            mutex_exit(&config->_mutex);
             return status;
         }
 
@@ -898,6 +919,7 @@ static int program(blockdevice_t *device, const void *_buffer, size_t addr, size
     }
 
     _postclock_then_deselect(config);
+    mutex_exit(&config->_mutex);
     return status;
 }
 
@@ -918,12 +940,15 @@ static bool _is_valid_trim(blockdevice_t *device, size_t addr, size_t size) {
 
 static int trim(blockdevice_t *device, size_t addr, size_t size) {
     blockdevice_sd_config_t *config = device->config;
+    mutex_enter_blocking(&config->_mutex);
 
     if (!_is_valid_trim(device, addr, size)) {
+        mutex_exit(&config->_mutex);
         return SD_BLOCK_DEVICE_ERROR_PARAMETER;
     }
 
     if (!config->is_initialized) {
+        mutex_exit(&config->_mutex);
         return SD_BLOCK_DEVICE_ERROR_NO_INIT;
     }
     int status = BD_ERROR_OK;
@@ -938,14 +963,18 @@ static int trim(blockdevice_t *device, size_t addr, size_t size) {
 
     // Start lba sent in start command
     if (BD_ERROR_OK != (status = _cmd(config, CMD32_ERASE_WR_BLK_START_ADDR, addr, 0, NULL))) {
+        mutex_exit(&config->_mutex);
         return status;
     }
 
     // End lba = addr+size sent in end addr command
     if (BD_ERROR_OK != (status = _cmd(config, CMD33_ERASE_WR_BLK_END_ADDR, addr + size, 0, NULL))) {
+        mutex_exit(&config->_mutex);
         return status;
     }
     status = _cmd(config, CMD38_ERASE, 0x0, 0, NULL);
+
+    mutex_exit(&config->_mutex);
     return status;
 }
 
@@ -995,6 +1024,7 @@ blockdevice_t *blockdevice_sd_create(spi_inst_t *spi_inst,
     config->enable_crc = enable_crc;
     config->card_type = SDCARD_NONE;
     config->block_size = 512;
+    mutex_init(&config->_mutex);
     device->config = config;
 
     device->init(device);
