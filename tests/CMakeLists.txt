@@ -5,6 +5,7 @@ add_executable(tests
   test_blockdevice.c
   test_filesystem.c
   test_vfs.c
+  test_stdio.c
   test_copy_between_different_filesystems.c
 )
 if(WITHOUT_BLOCKDEVICE_SD)
@@ -23,6 +24,7 @@ target_link_options(tests PRIVATE -Wl,--print-memory-usage)
 
 pico_add_extra_outputs(tests)
 pico_enable_stdio_usb(tests 1)
+
 
 find_program(OPENOCD openocd)
 if(OPENOCD)
