@@ -166,7 +166,9 @@ Of course, a more bare-metal use, where only block devices are utilized, is also
 ## Related Projects and Inspirations
 
 There are multiple ways to add filesystems to the pico-sdk environment. Firstly, FatFs[^1] and littlefs[^2] are popular file system implementations. These filesystem implementations require writing drivers for the block devices used. They also each have their own Unix-like API, but with a distinctive dialect.
+
 While there are several solutions that cover the problem of writing drivers for the Raspberry Pi Pico, the carlk3[^6] implementation is probably the most popular. Especially, it includes DMA support to reduce CPU load and support for even faster SDIO[^7]. This would be the first choice for projects using SD cards and the FAT file system with pico-sdk.
+
 Among multi-filesystem implementations, Memotech-Bill[^8] implementation provides standard I/O support for pico-sdk using the newlib[^9] hook. The littlefs file system for on-board flash and FatFs for SD cards can be operated as an integrated file system. It is an ambitious project that goes beyond files and integrates character devices such as TTYs and UARTs.
 
 While referring to these existing projects, _pico-vfs_ aims to make the implementation of drivers and file systems for block devices separate and interchangeable, similar to MicroPython's VFS[^10] and ARM Mbed OS's Storage[^11].
