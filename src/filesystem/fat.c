@@ -11,7 +11,6 @@
 #include <pico/mutex.h>
 #include "blockdevice/blockdevice.h"
 #include "filesystem/fat.h"
-#include "pico_vfs_conf.h"
 #include "ff.h"
 #include "diskio.h"
 
@@ -197,7 +196,6 @@ static int mount(filesystem_t *fs, blockdevice_t *device, bool pending) {
     mutex_enter_blocking(&context->_mutex);
 
     char _fsid[3] = {0};
-
     for (size_t i = 0; i < FF_VOLUMES; i++) {
         if (_ffs[i] == NULL) {
             context->id = i;

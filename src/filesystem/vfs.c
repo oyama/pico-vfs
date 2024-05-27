@@ -26,9 +26,12 @@ typedef struct {
     filesystem_t *filesystem;
 } dir_descriptor_t;
 
+#if !defined(PICO_VFS_MAX_MOUNTPOINT)
+#define PICO_VFS_MAX_MOUNTPOINT        10
+#endif
+#define FS_MAX_MOUNTPOINT              PICO_VFS_MAX_MOUNTPOINT
 
-#define FS_MOUNTPOINT_NUM   10
-static mountpoint_t mountpoints[FS_MOUNTPOINT_NUM] = {0};  // Mount points and file system map
+static mountpoint_t mountpoints[FS_MAX_MOUNTPOINT] = {0};  // Mount points and file system map
 static size_t max_file_descriptor = 0;                     // File descriptor current maximum value
 static file_descriptor_t *file_descriptor = NULL;          // File descriptor and file system map
 static size_t max_dir_descriptor = 0;                      // Dir descriptor current maximum value
@@ -59,7 +62,7 @@ static mountpoint_t *find_mountpoint(const char *path) {
     mountpoint_t *longest_match = NULL;
     size_t longest_length = 0;
 
-    for (size_t i = 0; i < FS_MOUNTPOINT_NUM; i++) {
+    for (size_t i = 0; i < FS_MAX_MOUNTPOINT; i++) {
         size_t prefix_length = strlen(mountpoints[i].dir);
         if (prefix_length > longest_length && strncmp(path, mountpoints[i].dir, prefix_length) == 0) {
             longest_match = &mountpoints[i];
@@ -81,7 +84,7 @@ int fs_mount(const char *dir, filesystem_t *fs, blockdevice_t *device) {
 
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
-    for (size_t i = 0; i < FS_MOUNTPOINT_NUM; i++) {
+    for (size_t i = 0; i < FS_MAX_MOUNTPOINT; i++) {
         if (mountpoints[i].filesystem == NULL) {
             mountpoints[i].filesystem = fs;
             mountpoints[i].device = device;

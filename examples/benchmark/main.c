@@ -15,7 +15,6 @@
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/vfs.h"
-#include "pico_vfs_conf.h"
 
 
 #define COLOR_RED(format)    ("\e[31m" format "\e[0m")

@@ -1,5 +1,3 @@
-#include "pico_vfs_conf.h"
-
 /*---------------------------------------------------------------------------/
 /  Configurations of FatFs Module
 /---------------------------------------------------------------------------*/
@@ -168,7 +166,11 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define FF_VOLUMES		PICO_VFS_FAT_CHAN_FF_VOLUMES
+#if !defined(PICO_VFS_MAX_FAT_VOLUME)
+#define PICO_VFS_MAX_FAT_VOLUME       4
+#endif
+
+#define FF_VOLUMES		PICO_VFS_MAX_FAT_VOLUME
 /* Number of volumes (logical drives) to be used. (1-10) */
 
 
