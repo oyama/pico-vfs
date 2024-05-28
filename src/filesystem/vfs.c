@@ -76,6 +76,13 @@ static mountpoint_t *find_mountpoint(const char *path) {
     return longest_match;
 }
 
+static bool is_valid_file_descriptor(int fildes) {
+    if (fildes <= STDIO_FILNO_MAX || (int)max_file_descriptor <= FILENO_INDEX(fildes))
+        return false;
+    else
+        return true;
+}
+
 int fs_format(filesystem_t *fs, blockdevice_t *device) {
     return fs->format(fs, device);
 }
@@ -221,6 +228,17 @@ int _fstat(int fildes, struct stat *st) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
+    if (fildes == STDIN_FILENO || fildes == STDOUT_FILENO || fildes == STDERR_FILENO) {
+        mutex_exit(&_mutex);
+        st->st_size = 0;
+        st->st_mode = S_IFCHR;
+        return _error_remap(0);
+    }
+    if (!is_valid_file_descriptor(fildes)) {
+        mutex_exit(&_mutex);
+        return _error_remap(-EBADF);
+    }
+
     fs_file_t *file = file_descriptor[FILENO_INDEX(fildes)].file;
     filesystem_t *fs = file_descriptor[FILENO_INDEX(fildes)].filesystem;
     if (fs == NULL) {
@@ -345,13 +363,6 @@ int _open(const char *path, int oflags, ...) {
     mutex_exit(&_mutex);
 
     return _error_remap(fd);
-}
-
-static bool is_valid_file_descriptor(int fildes) {
-    if (fildes <= STDIO_FILNO_MAX || (int)max_file_descriptor <= FILENO_INDEX(fildes))
-        return false;
-    else
-        return true;
 }
 
 int _close(int fildes) {
