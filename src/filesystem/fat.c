@@ -633,10 +633,8 @@ static int dir_read(filesystem_t *fs, fs_dir_t *dir, struct dirent *ent) {
         return -ENOENT;
     }
     ent->d_type = (finfo.fattrib & AM_DIR) ? DT_DIR : DT_REG;
-    if (ent->d_name[0] == 0) {
-        strncpy(ent->d_name, finfo.fname, FF_LFN_BUF);
-        ent->d_name[FF_LFN_BUF] = '\0';
-    }
+    strncpy(ent->d_name, finfo.fname, FF_LFN_BUF);
+    ent->d_name[FF_LFN_BUF] = '\0';
     return 0;
 }
 
