@@ -404,11 +404,12 @@ static size_t pico_stdio_fallback_write(const void *buf, size_t nbyte) {
 
 // _read to STDIN_FILENO fall back to `getchar` in the pico_stdio library
 static size_t pico_stdio_fallback_read(void *buf, size_t nbyte) {
+    (void)buf;
+    (void)nbyte;
+
     uint8_t *in = buf;
-    for (size_t i = 0; i < nbyte; i++) {
-        in[i] = getchar();
-    }
-    return nbyte;
+    in[0] = getchar();
+    return 1;
 }
 
 ssize_t _write(int fildes, const void *buf, size_t nbyte) {
@@ -441,9 +442,9 @@ ssize_t _read(int fildes, void *buf, size_t nbyte) {
     mutex_enter_blocking(&_mutex);
 
     if (fildes == STDIN_FILENO) {
-        pico_stdio_fallback_read(buf, nbyte);
+        size_t read_bytes = pico_stdio_fallback_read(buf, nbyte);
         mutex_exit(&_mutex);
-        return nbyte;
+        return read_bytes;
     }
     if (!is_valid_file_descriptor(fildes)) {
         mutex_exit(&_mutex);
