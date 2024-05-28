@@ -144,6 +144,13 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
         return err;
     }
 
+    // erase super block
+    err = device->erase(device, 0, device->program_size);
+    if (err) {
+        mutex_exit(&context->_mutex);
+        return err;
+    }
+
     _init_config(&context->config, device);
     err = lfs_format(&context->littlefs, &context->config);
     if (err) {
