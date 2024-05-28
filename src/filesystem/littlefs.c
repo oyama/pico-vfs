@@ -122,6 +122,12 @@ static int littlefs_sync(const struct lfs_config *c) {
 }
 
 static void _init_config(struct lfs_config *config, blockdevice_t *device) {
+    int32_t block_cycles = config->block_cycles;
+    lfs_size_t lookahead_size = config->lookahead_size;
+    memset(config, 0, sizeof(struct lfs_config));
+    config->block_cycles = block_cycles;
+    config->lookahead_size = lookahead_size;
+
     config->read = littlefs_read;
     config->prog = littlefs_program;
     config->erase = littlefs_erase;
