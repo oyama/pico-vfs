@@ -562,11 +562,8 @@ static void test_open_memstream(void) {
 static void test_perror(void) {
     test_printf("perror");
 
-    errno = ENOENT;
-    perror("prefix");
-
-
-    printf("not support\n");
+    errno = 0;
+    perror(COLOR_GREEN("ok"));
 }
 
 static void test_putc(void) {

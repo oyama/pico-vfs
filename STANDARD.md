@@ -42,7 +42,7 @@ Note that many functions from stdio.h are available, but some do not behave as e
 - `getw`: ok
 - `mkstemp`: ok
 - `open_memstream`: ok
-- `perror`: _not support_
+- `perror`: ok
 - `putc`: ok
 - `remove`: ok
 - `rename`: ok

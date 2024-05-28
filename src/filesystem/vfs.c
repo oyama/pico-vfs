@@ -378,10 +378,37 @@ int _close(int fildes) {
     return _error_remap(err);
 }
 
+
+extern void stdio_flush(void);  // from pico_stdio/stcio.c
+
+// _write to STDOUT_FILENO and STDERR_FILENO falls back to `putchar` in the pico_stdio library
+static size_t pico_stdio_fallback_write(const void *buf, size_t nbyte) {
+    const char *out = buf;
+    for (size_t i = 0; i < nbyte; i++) {
+        putchar(out[i]);
+    }
+    stdio_flush();
+    return nbyte;
+}
+
+// _read to STDIN_FILENO fall back to `getchar` in the pico_stdio library
+static size_t pico_stdio_fallback_read(void *buf, size_t nbyte) {
+    uint8_t *in = buf;
+    for (size_t i = 0; i < nbyte; i++) {
+        in[i] = getchar();
+    }
+    return nbyte;
+}
+
 ssize_t _write(int fildes, const void *buf, size_t nbyte) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
+    if (fildes == STDOUT_FILENO || fildes == STDERR_FILENO) {
+        pico_stdio_fallback_write(buf, nbyte);
+        mutex_exit(&_mutex);
+        return (ssize_t)nbyte;
+    }
     if (!is_valid_file_descriptor(fildes)) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -402,6 +429,11 @@ ssize_t _read(int fildes, void *buf, size_t nbyte) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
+    if (fildes == STDIN_FILENO) {
+        pico_stdio_fallback_read(buf, nbyte);
+        mutex_exit(&_mutex);
+        return nbyte;
+    }
     if (!is_valid_file_descriptor(fildes)) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
