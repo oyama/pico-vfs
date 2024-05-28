@@ -16,6 +16,7 @@
 #define FLASH_LENGTH_ALL         0
 #define LITTLEFS_BLOCK_CYCLE     500
 #define LITTLEFS_LOOKAHEAD_SIZE  16
+#define MIN_FILENO               3
 
 static void test_printf(const char *format, ...) {
     va_list args;
@@ -64,7 +65,7 @@ static void test_api_file_open_close() {
     assert(errno == ENOENT);
 
     fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd == 0);
+    assert(fd == MIN_FILENO);
 
     int err = close(fd);
     assert(err == 0);
@@ -76,21 +77,21 @@ static void test_api_file_open_many() {
     test_printf("open many files");
 
     int fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd == 0);
+    assert(fd == MIN_FILENO);
 
     int err = close(fd);
     assert(err == 0);
 
     int fd1 = open("/file", O_WRONLY|O_CREAT);
-    assert(fd1 == 0);
+    assert(fd1 == MIN_FILENO);
     int fd2 = open("/file2", O_WRONLY|O_CREAT);
-    assert(fd2 == 1);
+    assert(fd2 == MIN_FILENO + 1);
     int fd3 = open("/file3", O_WRONLY|O_CREAT);
-    assert(fd3 == 2);
+    assert(fd3 == MIN_FILENO + 2);
     int fd4 = open("/file4", O_WRONLY|O_CREAT);
-    assert(fd4 == 3);
+    assert(fd4 == MIN_FILENO + 3);
     int fd5 = open("/file5", O_WRONLY|O_CREAT);
-    assert(fd5 == 4);
+    assert(fd5 == MIN_FILENO + 4);
 
     err = close(fd5);
     assert(err == 0);
@@ -104,7 +105,7 @@ static void test_api_file_open_many() {
     assert(err == 0);
 
     int fd6 = open("/file6", O_WRONLY|O_CREAT);
-    assert(fd6 == 0);
+    assert(fd6 == MIN_FILENO);
     err = close(fd6);
     assert(err == 0);
 
@@ -116,7 +117,7 @@ static void test_api_file_write_read() {
     test_printf("write,read");
 
     int fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd >= 0);
+    assert(fd != -1);
 
     char write_buffer[512] = "Hello World!";
     ssize_t write_length = write(fd, write_buffer, strlen(write_buffer));
@@ -126,7 +127,7 @@ static void test_api_file_write_read() {
     assert(err == 0);
 
     fd = open("/file", O_RDONLY);
-    assert(fd >= 0);
+    assert(fd != -1);
     char read_buffer[512] = {0};
     ssize_t read_length = read(fd, read_buffer, sizeof(read_buffer));
     assert((size_t)read_length == strlen(write_buffer));
@@ -142,7 +143,7 @@ static void test_api_file_seek() {
     test_printf("lseek");
 
     int fd = open("/file", O_RDWR|O_CREAT);
-    assert(fd >= 0);
+    assert(fd != -1);
 
     char write_buffer[] = "123456789ABCDEF";
     ssize_t write_length = write(fd, write_buffer, strlen(write_buffer));
@@ -206,7 +207,7 @@ static void test_api_file_truncate() {
     test_printf("ftruncate");
 
     int fd = open("/file", O_RDWR|O_CREAT);
-    assert(fd >= 0);
+    assert(fd != -1);
 
     char write_buffer[] = "123456789ABCDEF";
     ssize_t write_length = write(fd, write_buffer, strlen(write_buffer));
@@ -294,7 +295,7 @@ static void test_api_dir_read() {
 
     // add regular file
     int fd = open("/dir/file", O_WRONLY|O_CREAT);
-    assert(fd >= 0);
+    assert(fd != -1);
     err = close(fd);
     assert(err == 0);
 
@@ -336,7 +337,7 @@ static void test_api_remove() {
     assert(errno == ENOENT);
 
     int fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd >= 0);
+    assert(fd != -1);
     err = close(fd);
     assert(err == 0);
 
@@ -354,7 +355,7 @@ static void test_api_rename() {
     assert(errno == ENOENT);
 
     int fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd >= 0);
+    assert(fd != -1);
     char write_buffer[512] = "Hello World!";
     ssize_t write_length = write(fd, write_buffer, strlen(write_buffer));
     assert((size_t)write_length == strlen(write_buffer));
@@ -366,7 +367,7 @@ static void test_api_rename() {
     assert(err == 0);
 
     fd = open("/renamed", O_RDONLY);
-    assert(fd >= 0);
+    assert(fd != -1);
     char read_buffer[512] = {0};
     ssize_t read_length = read(fd, read_buffer, sizeof(read_buffer));
     assert((size_t)read_length == strlen(write_buffer));
@@ -383,7 +384,7 @@ static void test_api_stat() {
 
     // regular file
     int fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd >= 0);
+    assert(fd != -1);
     char write_buffer[512] = "Hello World!";
     ssize_t write_length = write(fd, write_buffer, strlen(write_buffer));
     assert((size_t)write_length == strlen(write_buffer));
@@ -411,7 +412,7 @@ static void test_api_reformat(void) {
     test_printf("fs_reformat");
 
     int fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd >= 0);
+    assert(fd != -1);
     char write_buffer[512] = "Hello World!";
     ssize_t write_length = write(fd, write_buffer, strlen(write_buffer));
     assert((size_t)write_length == strlen(write_buffer));
