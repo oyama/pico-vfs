@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <sys/errno.h>
 #include <sys/dirent.h>
+#include <sys/unistd.h>
 #include <pico/mutex.h>
 #include "filesystem/vfs.h"
 
@@ -30,6 +31,9 @@ typedef struct {
 #define PICO_VFS_MAX_MOUNTPOINT        10
 #endif
 #define FS_MAX_MOUNTPOINT              PICO_VFS_MAX_MOUNTPOINT
+#define STDIO_FILNO_MAX                STDERR_FILENO
+#define FILENO_VALUE(fd)               (fd + STDIO_FILNO_MAX + 1)  // Conversion to file descriptors for publication
+#define FILENO_INDEX(fd)               (fd - STDIO_FILNO_MAX - 1)  // Conversion to file descriptors for internal use
 
 static mountpoint_t mountpoints[FS_MAX_MOUNTPOINT] = {0};  // Mount points and file system map
 static size_t max_file_descriptor = 0;                     // File descriptor current maximum value
@@ -217,8 +221,8 @@ int _fstat(int fildes, struct stat *st) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    fs_file_t *file = file_descriptor[fildes].file;
-    filesystem_t *fs = file_descriptor[fildes].filesystem;
+    fs_file_t *file = file_descriptor[FILENO_INDEX(fildes)].file;
+    filesystem_t *fs = file_descriptor[FILENO_INDEX(fildes)].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -269,7 +273,7 @@ static int _assign_file_descriptor(void) {
         }
         fd = last_max;
     }
-    return fd;
+    return FILENO_VALUE(fd);
 }
 
 static int _assign_dir_descriptor(void) {
@@ -324,7 +328,7 @@ int _open(const char *path, int oflags, ...) {
     }
 
     filesystem_t *fs = mp->filesystem;
-    fs_file_t *file = file_descriptor[fd].file = calloc(1, sizeof(fs_file_t));
+    fs_file_t *file = file_descriptor[FILENO_INDEX(fd)].file = calloc(1, sizeof(fs_file_t));
     if (file == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-ENOMEM);
@@ -333,34 +337,42 @@ int _open(const char *path, int oflags, ...) {
     int err = fs->file_open(fs, file, entity_path, oflags);
     if (err < 0) {
         free(file);
-        file_descriptor[fd].file = NULL;
+        file_descriptor[FILENO_INDEX(fd)].file = NULL;
         mutex_exit(&_mutex);
         return _error_remap(err);
     }
-    file_descriptor[fd].filesystem = fs;
+    file_descriptor[FILENO_INDEX(fd)].filesystem = fs;
     mutex_exit(&_mutex);
 
     return _error_remap(fd);
+}
+
+static bool is_valid_file_descriptor(int fildes) {
+    if (fildes <= STDIO_FILNO_MAX || (int)max_file_descriptor <= FILENO_INDEX(fildes))
+        return false;
+    else
+        return true;
 }
 
 int _close(int fildes) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    if ((int)max_file_descriptor <= fildes) {
+    if (!is_valid_file_descriptor(fildes)) {
+        printf("_close error fildes=%d\n", fildes);
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
-    fs_file_t *file = file_descriptor[fildes].file;
-    filesystem_t *fs = file_descriptor[fildes].filesystem;
+    fs_file_t *file = file_descriptor[FILENO_INDEX(fildes)].file;
+    filesystem_t *fs = file_descriptor[FILENO_INDEX(fildes)].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
     int err = fs->file_close(fs, file);
     free(file);
-    file_descriptor[fildes].filesystem = NULL;
-    file_descriptor[fildes].file = NULL;
+    file_descriptor[FILENO_INDEX(fildes)].filesystem = NULL;
+    file_descriptor[FILENO_INDEX(fildes)].file = NULL;
 
     mutex_exit(&_mutex);
     return _error_remap(err);
@@ -370,12 +382,12 @@ ssize_t _write(int fildes, const void *buf, size_t nbyte) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    if ((int)max_file_descriptor <= fildes) {
+    if (!is_valid_file_descriptor(fildes)) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
-    fs_file_t *file = file_descriptor[fildes].file;
-    filesystem_t *fs = file_descriptor[fildes].filesystem;
+    fs_file_t *file = file_descriptor[FILENO_INDEX(fildes)].file;
+    filesystem_t *fs = file_descriptor[FILENO_INDEX(fildes)].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -390,12 +402,12 @@ ssize_t _read(int fildes, void *buf, size_t nbyte) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    if ((int)max_file_descriptor <= fildes) {
+    if (!is_valid_file_descriptor(fildes)) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
-    fs_file_t *file = file_descriptor[fildes].file;
-    filesystem_t *fs = file_descriptor[fildes].filesystem;
+    fs_file_t *file = file_descriptor[FILENO_INDEX(fildes)].file;
+    filesystem_t *fs = file_descriptor[FILENO_INDEX(fildes)].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -411,12 +423,12 @@ off_t _lseek(int fildes, off_t offset, int whence) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    if ((int)max_file_descriptor <= fildes) {
+    if (!is_valid_file_descriptor(fildes)) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
-    fs_file_t *file = file_descriptor[fildes].file;
-    filesystem_t *fs = file_descriptor[fildes].filesystem;
+    fs_file_t *file = file_descriptor[FILENO_INDEX(fildes)].file;
+    filesystem_t *fs = file_descriptor[FILENO_INDEX(fildes)].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -434,12 +446,12 @@ off_t _ftello_r(struct _reent *ptr, register FILE *fp) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    if ((int)max_file_descriptor <= fildes) {
+    if (!is_valid_file_descriptor(fildes)) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
-    fs_file_t *file = file_descriptor[fildes].file;
-    filesystem_t *fs = file_descriptor[fildes].filesystem;
+    fs_file_t *file = file_descriptor[FILENO_INDEX(fildes)].file;
+    filesystem_t *fs = file_descriptor[FILENO_INDEX(fildes)].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
@@ -455,12 +467,12 @@ int ftruncate(int fildes, off_t length) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);
 
-    if ((int)max_file_descriptor <= fildes) {
+    if (!is_valid_file_descriptor(fildes)) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
-    fs_file_t *file = file_descriptor[fildes].file;
-    filesystem_t *fs = file_descriptor[fildes].filesystem;
+    fs_file_t *file = file_descriptor[FILENO_INDEX(fildes)].file;
+    filesystem_t *fs = file_descriptor[FILENO_INDEX(fildes)].filesystem;
     if (fs == NULL) {
         mutex_exit(&_mutex);
         return _error_remap(-EBADF);
