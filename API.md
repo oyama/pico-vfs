@@ -1,6 +1,6 @@
 # File system management API
 
-Many functions of pico-vfs are provided as POSIX and C standard file APIs, but the file system management procedures are provided by an API with the prefix `fs_*`.
+Many functions of pico-vfs are provided as POSIX and C standard file APIs, but the file system management procedures are provided by an API with the prefix `fs_*`. See [STANDARD.md](STANDARD.md) for information on the POSIX and C standard file API.
 
 ## `bool fs_init(void)`
 
