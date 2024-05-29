@@ -4,12 +4,36 @@
 #include <stdio.h>
 #include <string.h>
 #include "blockdevice/flash.h"
+#include "blockdevice/heap.h"
 #include "blockdevice/sd.h"
 
 #define COLOR_GREEN(format)  ("\e[32m" format "\e[0m")
 #define FLASH_START_AT       (0.5 * 1024 * 1024)
 #define FLASH_LENGTH_ALL     0
+#define HEAP_STORAGE_SIZE    (512 * 128)   // 64KB
 
+
+#include <ctype.h>
+static void print_hex(const char *label, const void *buffer, size_t length) {
+    const uint8_t *buf = buffer;
+    printf("%s:\n", label);
+    size_t offset = 0;
+    for (size_t i = 0; i < length; ++i) {
+        if (i % 16 == 0)
+            printf("0x%04u%s", offset, (i % 512) == 0 ? ">" : " ");
+        if (isalnum(buf[i])) {
+            printf("'%c' ", buf[i]);
+        } else {
+            printf("0x%02x", buf[i]);
+        }
+        if (i % 16 == 15) {
+            printf("\n");
+            offset += 16;
+        } else {
+            printf(", ");
+        }
+    }
+}
 
 static void test_printf(const char *format, ...) {
     va_list args;
@@ -23,8 +47,7 @@ static void test_printf(const char *format, ...) {
 }
 
 static void setup(blockdevice_t *device) {
-    size_t length = device->size(device);
-    device->erase(device, 0, length);
+    (void)device;
 }
 
 static void cleanup(blockdevice_t *device) {
@@ -35,10 +58,12 @@ static void cleanup(blockdevice_t *device) {
 static void test_api_init(blockdevice_t *device) {
     test_printf("init");
 
-    int err = device->init(device);
+    // The init is done when the object is created.
+    int err = device->deinit(device);
     assert(err == BD_ERROR_OK);
 
-    err = device->deinit(device);
+    // Init for later testing
+    err = device->init(device);
     assert(err == BD_ERROR_OK);
 
     printf(COLOR_GREEN("ok\n"));
@@ -152,4 +177,19 @@ void test_blockdevice(void) {
     cleanup(sd);
     blockdevice_sd_free(sd);
 #endif
+
+    printf("Block device Heap memory:\n");
+    blockdevice_t *heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
+    assert(heap != NULL);
+    setup(heap);
+
+    test_api_init(heap);
+    test_api_erase_program_read(heap);
+    test_api_trim(heap);
+    test_api_sync(heap);
+    test_api_size(heap);
+    test_api_attribute(heap);
+
+    cleanup(heap);
+    blockdevice_heap_free(heap);
 }

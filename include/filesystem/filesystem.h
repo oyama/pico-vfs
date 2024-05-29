@@ -16,10 +16,10 @@ extern "C" {
 
 #define PATH_MAX   256
 
-typedef enum {
+enum {
     FILESYSTEM_TYPE_FAT,
     FILESYSTEM_TYPE_LITTLEFS,
-} filesystem_type_t;
+};
 
 enum {
     DT_UNKNOWN = 0,
@@ -45,7 +45,7 @@ typedef struct {
 
 
 typedef struct filesystem {
-    filesystem_type_t type;
+    uint8_t type;
     const char *name;
     void *context;
 

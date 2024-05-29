@@ -25,12 +25,13 @@ static void test_printf(const char *format, ...) {
 }
 
 static void setup(blockdevice_t *device) {
-    size_t length = device->size(device);
-    device->erase(device, 0, length);
+    (void)device;
 }
 
 static void cleanup(blockdevice_t *device) {
     size_t length = device->size(device);
+    // Deinit is performed when unmounting, so re-init is required.
+    device->init(device);
     device->erase(device, 0, length);
 }
 
@@ -359,6 +360,7 @@ void test_filesystem(void) {
     printf("File system FAT:\n");
 
     blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+
     assert(flash != NULL);
     filesystem_t *fat = filesystem_fat_create();
     assert(fat != NULL);
@@ -379,7 +381,6 @@ void test_filesystem(void) {
     test_api_stat(fat);
 
     test_api_unmount(fat);
-
     cleanup(flash);
     blockdevice_flash_free(flash);
     filesystem_fat_free(fat);

@@ -31,6 +31,7 @@ typedef struct blockdevice {
     size_t program_size;
     const char *name;
     void *config;
+    bool is_initialized;
 } blockdevice_t;
 
 #ifdef __cplusplus

@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include "blockdevice/flash.h"
+#include "blockdevice/heap.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/vfs.h"
@@ -17,6 +18,7 @@
 #define LITTLEFS_BLOCK_CYCLE     500
 #define LITTLEFS_LOOKAHEAD_SIZE  16
 #define MIN_FILENO               3
+#define BLOCKDEVICE_HEAP_SIZE    (64 * 1024)
 
 static void test_printf(const char *format, ...) {
     va_list args;
@@ -30,12 +32,13 @@ static void test_printf(const char *format, ...) {
 }
 
 static void setup(blockdevice_t *device) {
-    size_t length = device->size(device);
-    device->erase(device, 0, length);
+    (void)device;
 }
 
 static void cleanup(blockdevice_t *device) {
     size_t length = device->size(device);
+    // Deinit is performed when unmounting, so re-init is required.
+    device->init(device);
     device->erase(device, 0, length);
 }
 
@@ -454,7 +457,6 @@ static void test_api_mount_unmount_repeat(filesystem_t *fs, blockdevice_t *devic
 
 void test_vfs(void) {
     printf("Virtual file system layer(FAT):\n");
-
     blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
     assert(flash != NULL);
     filesystem_t *fat = filesystem_fat_create();
@@ -484,7 +486,6 @@ void test_vfs(void) {
     filesystem_fat_free(fat);
 
     printf("Virtual file system layer(littlefs):\n");
-
     flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
     assert(flash != NULL);
     filesystem_t *lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
@@ -513,4 +514,34 @@ void test_vfs(void) {
     cleanup(flash);
     blockdevice_flash_free(flash);
     filesystem_littlefs_free(lfs);
+
+    printf("Virtual file system layer(littlefs + Heap):\n");
+    blockdevice_t *heap = blockdevice_heap_create(BLOCKDEVICE_HEAP_SIZE);
+    assert(heap != NULL);
+    lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
+                                     LITTLEFS_LOOKAHEAD_SIZE);
+    assert(lfs != NULL);
+    setup(heap);
+
+    test_api_format(lfs, heap);
+    test_api_mount(lfs, heap);
+    test_api_file_open_close();
+    test_api_file_open_many();
+    test_api_file_write_read();
+    test_api_file_seek();
+    test_api_file_tell();
+    test_api_file_truncate();
+    test_api_stat();
+    test_api_remove();
+    test_api_rename();
+    test_api_dir_open();
+    test_api_dir_open_many();
+    test_api_dir_read();
+    test_api_reformat();
+    test_api_unmount();
+    test_api_mount_unmount_repeat(lfs, heap);
+
+    cleanup(heap);
+    filesystem_littlefs_free(lfs);
+    blockdevice_heap_free(heap);
 }

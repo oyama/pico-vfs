@@ -15,6 +15,7 @@ target_compile_options(tests PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(tests PRIVATE
   pico_stdlib
   blockdevice_flash
+  blockdevice_heap
   blockdevice_sd
   filesystem_fat
   filesystem_littlefs

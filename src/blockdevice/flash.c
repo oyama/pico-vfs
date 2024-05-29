@@ -25,14 +25,16 @@ static size_t flash_target_offset(blockdevice_t *device) {
 }
 
 static int init(blockdevice_t *device) {
-    (void)device;
+    device->is_initialized = true;
     return BD_ERROR_OK;
 }
 
 static int deinit(blockdevice_t *device) {
-    (void)device;
+    device->is_initialized = false;
+
     return 0;
 }
+
 static int sync(blockdevice_t *device) {
     (void)device;
     return 0;
@@ -109,6 +111,7 @@ blockdevice_t *blockdevice_flash_create(uint32_t start, size_t length) {
     device->erase_size = FLASH_SECTOR_SIZE;  // 4096 byte
     device->program_size = FLASH_PAGE_SIZE;  // 256 byte
     device->name = DEVICE_NAME;
+    device->is_initialized = false;
 
     config->start = start;
     config->length = length > 0 ? length : (PICO_FLASH_SIZE_BYTES - start);

@@ -55,6 +55,7 @@ A block device is an object implementing `blockdevice_t`, which includes callbac
 
 - [src/blockdevice/flash.c](src/blockdevice/flash.c): Raspberry Pi Pico on-board flash memory block device
 - [src/blockdevice/sd.c](src/blockdevice/sd.c): SPI-connected SD or MMC card block device
+- [src/blockdevice/heap.c](src/blockdevice/heap.c): Heap memory block device
 
 ### File system layer
 

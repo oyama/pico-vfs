@@ -704,6 +704,7 @@ static int init(blockdevice_t *device) {
         return err;
     }
 
+    device->is_initialized = true;
     mutex_exit(&config->_mutex);
     return BD_ERROR_OK;
 }
@@ -721,7 +722,7 @@ static bool is_valid_program(blockdevice_t *device, size_t addr, size_t size) {
 }
 
 static int deinit(blockdevice_t *device) {
-    (void)device;
+    device->is_initialized = false;
     return 0;
 }
 
@@ -1015,6 +1016,8 @@ blockdevice_t *blockdevice_sd_create(spi_inst_t *spi_inst,
     device->erase_size = block_size;
     device->program_size = block_size;
     device->name = DEVICE_NAME;
+    device->is_initialized = false;
+
     config->spi_inst = spi_inst;
     config->mosi = mosi;
     config->miso = miso;

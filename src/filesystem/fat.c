@@ -220,11 +220,6 @@ static int unmount(filesystem_t *fs) {
     _fsid[0] = '0' + context->id;
 
     FRESULT res = f_mount(NULL, _fsid, 0);
-    int err = _ffs[context->id]->deinit(_ffs[context->id]);
-    if (err) {
-        mutex_exit(&context->_mutex);
-        return err;
-    }
     _ffs[context->id] = NULL;
 
     mutex_exit(&context->_mutex);
@@ -235,17 +230,18 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     filesystem_fat_context_t *context = fs->context;
     mutex_enter_blocking(&context->_mutex_format);
 
-    int err = device->init(device);
-    if (err) {
-        mutex_exit(&context->_mutex_format);
-        return err;
+    if (!device->is_initialized) {
+        int err = device->init(device);
+        if (err) {
+            mutex_exit(&context->_mutex_format);
+            return err;
+        }
     }
 
     // erase first handful of blocks
     size_t header = 2 * device->erase_size;
-    err = device->erase(device, 0, header);
+    int err = device->erase(device, 0, header);
     if (err) {
-        device->deinit(device);
         mutex_exit(&context->_mutex_format);
         return err;
     }
@@ -253,7 +249,6 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     size_t program_size = device->program_size;
     void *buffer = malloc(program_size);
     if (!buffer) {
-        device->deinit(device);
         mutex_exit(&context->_mutex_format);
         return -ENOMEM;
     }
@@ -262,7 +257,6 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
         err = device->program(device, buffer, i, program_size);
         if (err) {
             free(buffer);
-            device->deinit(device);
             mutex_exit(&context->_mutex_format);
             return err;
         }
@@ -272,25 +266,15 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     // trim entire device to indicate it is unneeded
     err = device->trim(device, 0, device->size(device));
     if (err) {
-        device->deinit(device);
-        mutex_exit(&context->_mutex_format);
-        return err;
-    }
-
-    err = device->deinit(device);
-    if (err) {
-        printf("deinit error=%d\n", err);
         mutex_exit(&context->_mutex_format);
         return err;
     }
 
     err = fs->mount(fs, device, true);
     if (err) {
-        printf("mount error=%d\n", err);
         mutex_exit(&context->_mutex_format);
         return err;
     }
-
 
     MKFS_PARM opt;
     opt.fmt = (FM_ANY | FM_SFD);

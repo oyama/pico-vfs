@@ -36,6 +36,16 @@ target_link_libraries(blockdevice_flash INTERFACE
   hardware_sync
 )
 
+# Heap memory blockdevice library
+add_library(blockdevice_heap INTERFACE)
+target_sources(blockdevice_heap INTERFACE
+  src/blockdevice/heap.c
+)
+target_include_directories(blockdevice_heap INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/include
+)
+target_compile_options(blockdevice_heap INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
+
 # FAT filesystem library
 add_library(filesystem_fat INTERFACE)
 target_sources(filesystem_fat INTERFACE

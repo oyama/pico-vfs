@@ -163,11 +163,6 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
         mutex_exit(&context->_mutex);
         return _error_remap(err);
     }
-    err = device->deinit(device);
-    if (err) {
-        mutex_exit(&context->_mutex);
-        return err;
-    }
 
     mutex_exit(&context->_mutex);
     return 0;
@@ -202,11 +197,6 @@ static int unmount(filesystem_t *fs) {
     int err = lfs_unmount(&context->littlefs);
     if (err && !res) {
         res = _error_remap(err);
-    }
-    blockdevice_t *device = context->config.context;
-    err = device->deinit(device);
-    if (err && !res) {
-        res = err;
     }
 
     mutex_exit(&context->_mutex);

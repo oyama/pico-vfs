@@ -84,10 +84,22 @@ static bool is_valid_file_descriptor(int fildes) {
 }
 
 int fs_format(filesystem_t *fs, blockdevice_t *device) {
+    if (!device->is_initialized) {
+        int err = device->init(device);
+        if (err != BD_ERROR_OK) {
+            return _error_remap(err);
+        }
+    }
     return fs->format(fs, device);
 }
 
 int fs_mount(const char *dir, filesystem_t *fs, blockdevice_t *device) {
+    if (!device->is_initialized) {
+        int err = device->init(device);
+        if (err)
+            return _error_remap(err);
+    }
+
     int err = fs->mount(fs, device, false);
     if (err) {
         return _error_remap(err);
