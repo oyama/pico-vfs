@@ -111,11 +111,16 @@ The spi and pin used in the block device argument can be customised. The followi
 
 ## Integration into project
 
-pico-vfs components are defined as _INTERFACE_ libraries. You can build by adding pico-vfs to your project's `CMakeLists.txt` and specifying the libraries of the components you want to introduce.
+Add the pico-vfs repository to your project by `git submodule` or simply `git clone`. Since pico-vfs contains submodules, recommended with `git submodule update --init --recursive`:
 
+```bash
+git submodule add https://github.com/oyama/pico-vfs.git
+git submodule update --init --recursive
+```
+
+Add `add_subdirectory` to `CMakeLists.txt` so that they can be built together:
 ```CMakeLists.txt
 add_subdirectory(pico-vfs)
-include(pico-vfs/pico_vfs.cmake)
 
 pico_enable_filesystem(${CMAKE_PROJECT_NAME})
 ```
