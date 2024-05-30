@@ -221,6 +221,21 @@ int mkdir(const char *path, mode_t mode) {
     return _error_remap(err);
 }
 
+int rmdir(const char *path) {
+    auto_init_mutex(_mutex);
+    mutex_enter_blocking(&_mutex);
+    mountpoint_t *mp = find_mountpoint(path);
+    if (mp == NULL) {
+        mutex_exit(&_mutex);
+        return _error_remap(-ENOENT);
+    }
+    const char *entity_path = remove_prefix(path, mp->dir);
+    filesystem_t *fs = mp->filesystem;
+    int err = fs->rmdir(fs, entity_path);
+    mutex_exit(&_mutex);
+    return _error_remap(err);
+}
+
 int _stat(const char *path, struct stat *st) {
     auto_init_mutex(_mutex);
     mutex_enter_blocking(&_mutex);

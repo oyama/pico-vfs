@@ -20,7 +20,10 @@ target_include_directories(blockdevice_sd INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
 target_compile_options(blockdevice_sd INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
-target_link_libraries(blockdevice_sd INTERFACE hardware_spi)
+target_link_libraries(blockdevice_sd INTERFACE
+  hardware_spi
+  hardware_sync
+)
 
 # Onboard-Flash blockdevice library
 add_library(blockdevice_flash INTERFACE)
@@ -34,6 +37,7 @@ target_compile_options(blockdevice_flash INTERFACE -Werror -Wall -Wextra -Wnull-
 target_link_libraries(blockdevice_flash INTERFACE
   hardware_flash
   hardware_sync
+  pico_sync
 )
 
 # Heap memory blockdevice library
@@ -45,6 +49,8 @@ target_include_directories(blockdevice_heap INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
 target_compile_options(blockdevice_heap INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
+target_link_libraries(blockdevice_heap INTERFACE pico_sync)
+
 
 # FAT filesystem library
 add_library(filesystem_fat INTERFACE)
@@ -60,6 +66,7 @@ target_include_directories(filesystem_fat INTERFACE
   vendor/ff15/source
 )
 target_compile_options(filesystem_fat INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
+target_link_libraries(filesystem_fat INTERFACE pico_sync)
 
 # littlefs filesystem library
 add_library(filesystem_littlefs INTERFACE)
@@ -70,6 +77,7 @@ target_sources(filesystem_littlefs INTERFACE
 )
 target_include_directories(filesystem_littlefs INTERFACE vendor/littlefs)
 target_compile_options(filesystem_littlefs INTERFACE -Wno-unused-function -Wno-null-dereference)
+target_link_libraries(filesystem_littlefs INTERFACE pico_sync)
 
 # VFS interface library
 add_library(filesystem_vfs INTERFACE)
@@ -78,6 +86,7 @@ target_include_directories(filesystem_vfs INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
 target_compile_options(filesystem_vfs INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
+target_link_libraries(filesystem_vfs INTERFACE pico_sync)
 
 # Default file system library
 add_library(filesystem_default INTERFACE)

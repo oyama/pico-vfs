@@ -233,6 +233,26 @@ static void test_api_file_truncate() {
     printf(COLOR_GREEN("ok\n"));
 }
 
+static void test_api_mkdir() {
+    test_printf("mkdir,rmdir");
+
+    int err = mkdir("/dir-create", 0777);
+    assert(err == 0);
+
+    struct stat finfo;
+    err = stat("/dir-create", &finfo);
+    assert(err == 0);
+    assert(finfo.st_mode & S_IFDIR);
+
+    err = rmdir("/dir-create");
+    assert(err == 0);
+
+    err = stat("/dir-create", &finfo);
+    assert(err == -1 && errno == ENOENT);
+
+    printf(COLOR_GREEN("ok\n"));
+}
+
 static void test_api_dir_open() {
     test_printf("opendir,closedir");
 
@@ -474,6 +494,7 @@ void test_vfs(void) {
     test_api_stat();
     test_api_remove();
     test_api_rename();
+    test_api_mkdir();
     test_api_dir_open();
     test_api_dir_open_many();
     test_api_dir_read();
@@ -504,6 +525,7 @@ void test_vfs(void) {
     test_api_stat();
     test_api_remove();
     test_api_rename();
+    test_api_mkdir();
     test_api_dir_open();
     test_api_dir_open_many();
     test_api_dir_read();
@@ -534,6 +556,7 @@ void test_vfs(void) {
     test_api_stat();
     test_api_remove();
     test_api_rename();
+    test_api_mkdir();
     test_api_dir_open();
     test_api_dir_open_many();
     test_api_dir_read();

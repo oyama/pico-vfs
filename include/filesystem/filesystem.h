@@ -56,6 +56,7 @@ typedef struct filesystem {
     int (*remove)(struct filesystem *fs, const char *path);
     int (*rename)(struct filesystem *fs, const char *oldpath, const char *newpath);
     int (*mkdir)(struct filesystem *fs, const char *path, mode_t mode);
+    int (*rmdir)(struct filesystem *fs, const char *path);
     int (*stat)(struct filesystem *fs, const char *path, struct stat *st);
 
     int (*file_open)(struct filesystem *fs, fs_file_t *file, const char *path, int flags);

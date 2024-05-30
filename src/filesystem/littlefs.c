@@ -234,6 +234,16 @@ static int file_mkdir(filesystem_t *fs, const char *path, mode_t mode) {
     return _error_remap(err);
 }
 
+static int file_rmdir(filesystem_t *fs, const char *path) {
+    filesystem_littlefs_context_t *context = fs->context;
+
+    mutex_enter_blocking(&context->_mutex);
+    int err = lfs_remove(&context->littlefs, path);
+    mutex_exit(&context->_mutex);
+
+    return _error_remap(err);
+}
+
 static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
     filesystem_littlefs_context_t *context = fs->context;
     struct lfs_info info;
@@ -425,6 +435,7 @@ filesystem_t *filesystem_littlefs_create(uint32_t block_cycles,
     fs->remove = file_remove;
     fs->rename = file_rename;
     fs->mkdir = file_mkdir;
+    fs->rmdir = file_rmdir;
     fs->stat = file_stat;
     fs->file_open = file_open;
     fs->file_close = file_close;

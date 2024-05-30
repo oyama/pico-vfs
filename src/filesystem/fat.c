@@ -367,6 +367,21 @@ static int file_mkdir(filesystem_t *fs, const char *path, mode_t mode) {
     return fat_error_remap(res);
 }
 
+static int file_rmdir(filesystem_t *fs, const char *path) {
+    filesystem_fat_context_t *context = fs->context;
+    char fpath[PATH_MAX];
+    fat_path_prefix(fpath, context->id, path);
+
+    mutex_enter_blocking(&context->_mutex);
+    FRESULT res = f_unlink(fpath);
+    mutex_exit(&context->_mutex);
+
+    if (res != FR_OK) {
+        debug_if(FFS_DBG, "f_unlink() failed: %d\n", res);
+    }
+    return fat_error_remap(res);
+}
+
 static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
     filesystem_fat_context_t *context = fs->context;
     char fpath[PATH_MAX];
@@ -637,6 +652,7 @@ filesystem_t *filesystem_fat_create() {
     fs->remove = file_remove;
     fs->rename = file_rename;
     fs->mkdir = file_mkdir;
+    fs->rmdir = file_rmdir;
     fs->stat = file_stat;
     fs->file_open = file_open;
     fs->file_close = file_close;
