@@ -241,7 +241,10 @@
 /  Note that enabling exFAT discards ANSI C (C89) compatibility. */
 
 
-#define FF_FS_NORTC		0
+#if !defined(PICO_VFS_NO_RTC)
+#define PICO_VFS_NO_RTC         0
+#endif
+#define FF_FS_NORTC    PICO_VFS_NO_RTC
 #define FF_NORTC_MON	1
 #define FF_NORTC_MDAY	1
 #define FF_NORTC_YEAR	2022

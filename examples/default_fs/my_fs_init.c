@@ -12,7 +12,7 @@
 bool fs_init(void) {
     printf("Initialize custom file system\n");
 
-    blockdevice_t *flash = blockdevice_flash_create(PICO_FLASH_SIZE_BYTES - DEFAULT_FS_SIZE, 0);
+    blockdevice_t *flash = blockdevice_flash_create(PICO_FLASH_SIZE_BYTES - PICO_FS_DEFAULT_SIZE, 0);
     blockdevice_t *sd = blockdevice_sd_create(spi0,
                                               PICO_DEFAULT_SPI_TX_PIN,
                                               PICO_DEFAULT_SPI_RX_PIN,
