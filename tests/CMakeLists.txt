@@ -25,13 +25,3 @@ target_link_options(tests PRIVATE -Wl,--print-memory-usage)
 
 pico_add_extra_outputs(tests)
 pico_enable_stdio_usb(tests 1)
-
-
-find_program(OPENOCD openocd)
-if(OPENOCD)
-  add_custom_target(run_tests
-    COMMAND ${OPENOCD} -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program tests.elf verify reset exit"
-    DEPENDS tests
-  )
-endif()
-

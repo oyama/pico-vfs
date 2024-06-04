@@ -18,12 +18,3 @@ pico_enable_filesystem(default_fs)
 #   filesystem_fat
 #   filesystem_vfs
 # )
-
-
-find_program(OPENOCD openocd)
-if(OPENOCD)
-  add_custom_target(run_default_fs
-    COMMAND ${OPENOCD} -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program default_fs.elf verify reset exit"
-    DEPENDS default_fs
-  )
-endif()

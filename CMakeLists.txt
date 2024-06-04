@@ -104,9 +104,3 @@ target_link_libraries(filesystem_default INTERFACE
 
 add_subdirectory(examples EXCLUDE_FROM_ALL)
 add_subdirectory(tests EXCLUDE_FROM_ALL)
-
-
-find_program(OPENOCD openocd)
-if(OPENOCD)
-  add_custom_target(reset COMMAND ${OPENOCD} -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c init -c reset -c exit)
-endif()

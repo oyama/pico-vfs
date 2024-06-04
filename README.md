@@ -83,7 +83,7 @@ git clone --recursive https://github.com/oyama/pico-vfs.git
 cd pico-vfs
 mkdir build; cd build
 PICO_SDK_FETCH_FROM_GIT=1 cmake ..
-make benchmark logger default_fs
+make benchmark logger default_fs tests
 ```
 The above examples specify the environment variable `PICO_SDK_FETCH_FROM_GIT` to download the pico-sdk from GitHub. If you want to specify a locally deployed pico-sdk, you should set it with the `PICO_SDK_PATH` environment variable.
 The build generates the firmware `examples/benchmark/benchmark.uf2`, `examples/usb_msc_logger/logger.uf2` and `examples/default_fs/default_fs.uf2`. Both can be installed by simply dragging and dropping them onto a Raspberry Pi Pico running in BOOTSEL mode.

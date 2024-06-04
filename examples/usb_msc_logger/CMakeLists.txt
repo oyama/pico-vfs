@@ -18,12 +18,3 @@ target_link_libraries(logger PRIVATE
 )
 pico_enable_stdio_usb(logger 1)
 pico_add_extra_outputs(logger)
-
-
-find_program(OPENOCD openocd)
-if(OPENOCD)
-  add_custom_target(run_logger
-    COMMAND ${OPENOCD} -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program logger.elf verify reset exit"
-    DEPENDS logger
-  )
-endif()
