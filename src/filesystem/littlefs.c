@@ -246,7 +246,7 @@ static int file_rmdir(filesystem_t *fs, const char *path) {
 
 static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
     filesystem_littlefs_context_t *context = fs->context;
-    struct lfs_info info;
+    struct lfs_info info = {0};
 
     mutex_enter_blocking(&context->_mutex);
     int err = lfs_stat(&context->littlefs, path, &info);
