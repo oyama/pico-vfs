@@ -463,6 +463,12 @@ static ssize_t file_write(filesystem_t *fs, fs_file_t *file, const void *buffer,
 
     mutex_enter_blocking(&context->_mutex);
     FRESULT res = f_write(&(fat_file->file), buffer, size, &n);
+    if (res != FR_OK) {
+        mutex_exit(&context->_mutex);
+        debug_if(FFS_DBG, "f_write() failed: %d", res);
+        return fat_error_remap(res);
+    }
+    res = f_sync(&fat_file->file);
     mutex_exit(&context->_mutex);
 
     if (res != FR_OK) {

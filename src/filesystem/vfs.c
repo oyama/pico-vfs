@@ -299,13 +299,8 @@ int _fstat(int fildes, struct stat *st) {
         const char *entity_path = remove_prefix(path, mp->dir);
         filesystem_t *fs = mp->filesystem;
 
-        int err = fs->file_sync(fs, file);
-        if (err != 0) {
-            mutex_exit(&_mutex);
-            return _error_remap(err);
-        }
         struct stat finfo = {0};
-        err = fs->stat(fs, entity_path, &finfo);
+        int err = fs->stat(fs, entity_path, &finfo);
         if (err != 0) {
             mutex_exit(&_mutex);
             return _error_remap(err);
