@@ -14,16 +14,6 @@ jobs:
           rm -rf "${{ github.workspace }}/pico-sdk"
           rm -rf "${{ github.workspace }}/pico-vfs"
 
-      - name: Checkout pico-vfs
-        uses: actions/checkout@v4
-        with:
-          repository: oyama/pico-vfs
-          ref: main
-          path: pico-vfs
-      - name: Checkout pico-vfs submodules
-        working-directory: ${{github.workspace}}/pico-vfs
-        run: git submodule update --init
-
       - name: Checkout pico-sdk
         uses: actions/checkout@v4
         with:
@@ -34,12 +24,18 @@ jobs:
         working-directory: ${{github.workspace}}/pico-sdk
         run: git submodule update --init
 
-      - name: Install dependencies
+      - name: Checkout pico-vfs
+        uses: actions/checkout@v4
+        with:
+          path: pico-vfs
+      - name: Checkout pico-vfs submodules
         working-directory: ${{github.workspace}}/pico-vfs
+        run: git submodule update --init
+
+      - name: Install dependencies
         run: choco install .github/workflows/choco_packages.config
 
       - name: Build firmware
-        working-directory: ${{github.workspace}}/pico-vfs
         shell: bash
         run: |
           mkdir build
