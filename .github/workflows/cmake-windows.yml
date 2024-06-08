@@ -1,0 +1,41 @@
+name: Build on Windows
+on: [push, pull_request]
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Clean workspace
+        shell: bash
+        run: |
+          echo "Cleaning up previous run"
+          rm -rf "${{ github.workspace }}/pico-sdk"
+          rm -rf "${{ github.workspace }}/pico-vfs"
+
+      - name: Checkout pico-vfs
+        uses: actions/checkout@v4
+      - name: Checkout submodules
+        run: git submodule update --init
+
+      - name: Checkout pico-sdk
+        uses: actions/checkout@v4
+        with:
+          repository: raspberrypi/pico-sdk
+          ref: master
+          path: pico-sdk
+      - name: Checkout pico-sdk submodules
+        working-directory: ${{github.workspace}}/pico-sdk
+        run: git submodule update --init
+
+      - name: Install dependencies
+        run: choco install .github/workflows/choco_packages.config
+
+      - name: Build firmware
+        shell: bash
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPICO_BOARD=pico
+          cmake --build . --target tests
