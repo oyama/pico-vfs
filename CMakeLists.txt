@@ -102,5 +102,8 @@ target_link_libraries(filesystem_default INTERFACE
 )
 
 
-add_subdirectory(examples EXCLUDE_FROM_ALL)
-add_subdirectory(tests EXCLUDE_FROM_ALL)
+# NOTE: Additional targets are only included in the build of the pico-vfs project root
+if(${CMAKE_CURRENT_LIST_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
+  add_subdirectory(examples EXCLUDE_FROM_ALL)
+  add_subdirectory(tests EXCLUDE_FROM_ALL)
+endif()
