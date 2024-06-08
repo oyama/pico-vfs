@@ -16,7 +16,12 @@ jobs:
 
       - name: Checkout pico-vfs
         uses: actions/checkout@v4
-      - name: Checkout submodules
+        with:
+          repository: oyama/pico-vfs
+          ref: main
+          path: pico-vfs
+      - name: Checkout pico-vfs submodules
+        working-directory: ${{github.workspace}}/pico-vfs
         run: git submodule update --init
 
       - name: Checkout pico-sdk
@@ -30,6 +35,7 @@ jobs:
         run: git submodule update --init
 
       - name: Install dependencies
+        working-directory: ${{github.workspace}}/pico-vfs
         run: choco install .github/workflows/choco_packages.config
 
       - name: Build firmware
