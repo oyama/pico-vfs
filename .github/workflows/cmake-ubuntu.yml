@@ -1,4 +1,4 @@
-name: CMake on Ubuntu latest
+name: Build on Ubuntu
 on: [push, pull_request]
 env:
   BUILD_TYPE: Release
