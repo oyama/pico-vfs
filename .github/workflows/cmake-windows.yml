@@ -33,6 +33,7 @@ jobs:
         run: choco install .github/workflows/choco_packages.config
 
       - name: Build firmware
+        working-directory: ${{github.workspace}}/pico-vfs
         shell: bash
         run: |
           mkdir build
