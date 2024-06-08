@@ -37,5 +37,5 @@ jobs:
         run: |
           mkdir build
           cd build
-          PICO_SDK_PATH=../../pico-sdk cmake .. -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPICO_BOARD=pico
+          cmake .. -G Ninja -DPICO_SDK_PATH=../../pico-sdk -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPICO_BOARD=pico
           cmake --build . --target tests
