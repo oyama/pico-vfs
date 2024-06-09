@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "blockdevice/flash.h"
 #include "blockdevice/heap.h"
+#include "blockdevice/loopback.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/vfs.h"
@@ -68,7 +69,7 @@ static void test_api_file_open_close() {
     assert(errno == ENOENT);
 
     fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd == MIN_FILENO);
+    assert(fd >= MIN_FILENO);
 
     int err = close(fd);
     assert(err == 0);
@@ -80,21 +81,21 @@ static void test_api_file_open_many() {
     test_printf("open many files");
 
     int fd = open("/file", O_WRONLY|O_CREAT);
-    assert(fd == MIN_FILENO);
+    assert(fd >= MIN_FILENO);
 
     int err = close(fd);
     assert(err == 0);
 
     int fd1 = open("/file", O_WRONLY|O_CREAT);
-    assert(fd1 == MIN_FILENO);
+    assert(fd1 >= MIN_FILENO);
     int fd2 = open("/file2", O_WRONLY|O_CREAT);
-    assert(fd2 == MIN_FILENO + 1);
+    assert(fd2 == fd1 + 1);
     int fd3 = open("/file3", O_WRONLY|O_CREAT);
-    assert(fd3 == MIN_FILENO + 2);
+    assert(fd3 == fd1 + 2);
     int fd4 = open("/file4", O_WRONLY|O_CREAT);
-    assert(fd4 == MIN_FILENO + 3);
+    assert(fd4 == fd1 + 3);
     int fd5 = open("/file5", O_WRONLY|O_CREAT);
-    assert(fd5 == MIN_FILENO + 4);
+    assert(fd5 == fd1 + 4);
 
     err = close(fd5);
     assert(err == 0);
@@ -108,7 +109,7 @@ static void test_api_file_open_many() {
     assert(err == 0);
 
     int fd6 = open("/file6", O_WRONLY|O_CREAT);
-    assert(fd6 == MIN_FILENO);
+    assert(fd6 == fd1);
     err = close(fd6);
     assert(err == 0);
 
@@ -475,8 +476,20 @@ static void test_api_mount_unmount_repeat(filesystem_t *fs, blockdevice_t *devic
     printf(COLOR_GREEN("ok\n"));
 }
 
+static void test_loopback_file(void) {
+    test_printf("loopback image file");
+
+    struct stat finfo;
+    int err = stat("/flash/loopback.dmg", &finfo);
+    assert(err == 0);
+    assert(finfo.st_mode & S_IFREG);
+    assert((size_t)finfo.st_size > 0);
+
+    printf(COLOR_GREEN("ok\n"));
+}
+
 void test_vfs(void) {
-    printf("Virtual file system layer(FAT):\n");
+    printf("VFS FAT:\n");
     blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
     assert(flash != NULL);
     filesystem_t *fat = filesystem_fat_create();
@@ -506,7 +519,7 @@ void test_vfs(void) {
     blockdevice_flash_free(flash);
     filesystem_fat_free(fat);
 
-    printf("Virtual file system layer(littlefs):\n");
+    printf("VFS littlefs:\n");
     flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
     assert(flash != NULL);
     filesystem_t *lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
@@ -537,7 +550,7 @@ void test_vfs(void) {
     blockdevice_flash_free(flash);
     filesystem_littlefs_free(lfs);
 
-    printf("Virtual file system layer(littlefs + Heap):\n");
+    printf("VFS littlefs on the Heap:\n");
     blockdevice_t *heap = blockdevice_heap_create(BLOCKDEVICE_HEAP_SIZE);
     assert(heap != NULL);
     lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
@@ -567,4 +580,50 @@ void test_vfs(void) {
     cleanup(heap);
     filesystem_littlefs_free(lfs);
     blockdevice_heap_free(heap);
+
+
+    printf("VFS loopback FAT on littlefs:\n");
+    flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+    assert(flash != NULL);
+    lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
+                                     LITTLEFS_LOOKAHEAD_SIZE);
+    assert(lfs != NULL);
+    setup(flash);
+    int err = fs_format(lfs, flash);
+    assert(err == 0);
+    err = fs_mount("/flash", lfs, flash);
+    assert(err == 0);
+
+    blockdevice_t *loopback = blockdevice_loopback_create("/flash/loopback.dmg", 64 * 1024, 512);
+    fat = filesystem_fat_create();
+    assert(loopback != NULL);
+    assert(fat != NULL);
+
+    test_api_format(fat, loopback);
+    test_api_mount(fat, loopback);
+    test_api_file_open_close();
+    test_api_file_open_many();
+    test_api_file_write_read();
+    test_api_file_seek();
+    test_api_file_tell();
+    test_api_file_truncate();
+    test_api_stat();
+    test_api_remove();
+    test_api_rename();
+    test_api_mkdir();
+    test_api_dir_open();
+    test_api_dir_open_many();
+    test_api_dir_read();
+    test_api_reformat();
+    test_api_mount_unmount_repeat(fat, loopback);
+
+    filesystem_fat_free(fat);
+    blockdevice_loopback_free(loopback);
+
+    test_loopback_file();
+
+    fs_unmount("/flash");
+    cleanup(flash);
+    blockdevice_flash_free(flash);
+    filesystem_littlefs_free(lfs);
 }

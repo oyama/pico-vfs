@@ -979,7 +979,7 @@ void test_standard_file_api(void) {
 
 
 void test_stdio(void) {
-    printf("Newlib stdio standard file API(littlefs):\n");
+    printf("POSIX and C standard file API(littlefs):\n");
 
     blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
     filesystem_t *lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
@@ -994,7 +994,7 @@ void test_stdio(void) {
     blockdevice_flash_free(flash);
 
 
-    printf("Newlib stdio standard file API(FAT):\n");
+    printf("POSIX and C standard file API(FAT):\n");
 
     flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
     filesystem_t *fat = filesystem_fat_create();
