@@ -142,7 +142,7 @@ enum cmd_supported {
 
 #define PACKET_SIZE   6  // SD Packet size CMD+ARG+CRC
 
-static const char DEVICE_NAME[] = "SD";
+static const char DEVICE_NAME[] = "sd";
 static const size_t block_size = 512;
 static const uint8_t SPI_FILL_CHAR = 0xFF;
 

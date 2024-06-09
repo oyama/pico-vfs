@@ -173,6 +173,25 @@ int fs_reformat(const char *path) {
     return _error_remap(err);
 }
 
+int fs_info(const char *path, filesystem_t **fs, blockdevice_t **device) {
+    (void)fs;
+    (void)device;
+
+    auto_init_recursive_mutex(_mutex);
+    recursive_mutex_enter_blocking (&_mutex);
+
+    mountpoint_t *mp = find_mountpoint(path);
+    if (mp == NULL) {
+        recursive_mutex_exit(&_mutex);
+        return _error_remap(-ENOENT);
+    }
+    *fs = mp->filesystem;
+    *device = mp->device;
+
+    recursive_mutex_exit(&_mutex);
+    return _error_remap(0);
+}
+
 int _unlink(const char *path) {
     auto_init_recursive_mutex(_mutex);
     recursive_mutex_enter_blocking (&_mutex);

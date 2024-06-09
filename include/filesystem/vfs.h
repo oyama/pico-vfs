@@ -71,6 +71,16 @@ int fs_unmount(const char *path);
  */
 int fs_reformat(const char *path);
 
+/** Lookup filesystem and blockdevice objects from a mount point
+ *
+ * @param path Directory path of the mount point. Must be the same as the path specified for the mount.
+ * @param fs Pointer references to filesystem objects
+ * @param device Pinter references to blockdevice objects
+ * @retval 0 Lookup succeeded
+ * @retval <0 Lookup failed. Negative integer value indicates an error code.
+ */
+int fs_info(const char *path, filesystem_t **fs, blockdevice_t **device);
+
 /** File system error message
  *
  * Convert the error code reported in the negative integer into a string.
