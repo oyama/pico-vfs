@@ -17,6 +17,7 @@ target_link_libraries(tests PRIVATE
   blockdevice_flash
   blockdevice_heap
   blockdevice_sd
+  blockdevice_loopback
   filesystem_fat
   filesystem_littlefs
   filesystem_vfs
@@ -25,3 +26,12 @@ target_link_options(tests PRIVATE -Wl,--print-memory-usage)
 
 pico_add_extra_outputs(tests)
 pico_enable_stdio_usb(tests 1)
+
+
+find_program(OPENOCD openocd)
+if(OPENOCD)
+  add_custom_target(run_tests
+    COMMAND ${OPENOCD} -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program tests.elf verify reset exit"
+    DEPENDS tests
+  )
+endif()

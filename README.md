@@ -53,22 +53,23 @@ To provide a flexible and lightweight file system framework for embedded systems
 
 A block device is an object implementing `blockdevice_t`, which includes callback functions and variables tailored to the block device, allowing different block devices to be operated with a consistent interface.
 
-- [src/blockdevice/flash.c](src/blockdevice/flash.c): Raspberry Pi Pico on-board flash memory block device
-- [src/blockdevice/sd.c](src/blockdevice/sd.c): SPI-connected SD or MMC card block device
-- [src/blockdevice/heap.c](src/blockdevice/heap.c): Heap memory block device
+- [Flash Block Device](src/blockdevice/flash.c): Manages Raspberry Pi Pico onboard flash memory as a block device.
+- [SD Card Block Device](src/blockdevice/sd.c): Manages SD/MMC cards as block devices via SPI interface.
+- [Heap Block Device](src/blockdevice/heap.c): Manages heap memory for block device operations.
+- [Loopback Block Device](src/blockdevice/loopback.c): Manages disk image file manipulation through a virtual block device.
 
 ### File system layer
 
 The file system is an object implementing `filesystem_t`, which contains callback functions and variables based on the file system, enabling different file systems to be operated with a consistent interface.
 
-- [src/filesystem/fat.c](src/filesystem/fat.c): FAT file system with FatFs[^1]
-- [src/filesystem/littlefs.c](src/filesystem/littlefs.c): littlefs[^2] filesystem
+- [FAT File System](src/filesystem/fat.c): Manages FAT filesystem operation via FatFs[^1].
+- [littlefs File System](src/filesystem/littlefs.c): Manages operations for the littlefs[^2] filesystem.
 
 ### VFS layer
 
 Block devices and file systems are integrated into the POSIX file API by the VFS layer. Users can perform operations like `open()`, `read()`, and `write()` as usual, and also use higher-level functions such as `fopen()`, `fprintf()`, and `fgets()`. The available POSIX and C standard file APIs are listed in [STANDARD.md](STANDARD.md). See [API.md](API.md) for file system management APIs not defined in POSIX.
 
-- [src/filesystem/vfs.c](src/filesystem/vfs.c): Virtual file system layer
+- [Virtual File System](src/filesystem/vfs.c): Integrates block devices and file systems with POSIX file APIs, enabling standard file operations.
 
 Furthermore, individual block devices and file systems are available as separate INTERFACE libraries, enabling the file system to be configured with minimal footprint.
 

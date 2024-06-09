@@ -5,12 +5,17 @@
 #include <string.h>
 #include "blockdevice/flash.h"
 #include "blockdevice/heap.h"
+#include "blockdevice/loopback.h"
 #include "blockdevice/sd.h"
+#include "filesystem/fat.h"
+#include "filesystem/vfs.h"
 
 #define COLOR_GREEN(format)  ("\e[32m" format "\e[0m")
 #define FLASH_START_AT       (0.5 * 1024 * 1024)
 #define FLASH_LENGTH_ALL     0
 #define HEAP_STORAGE_SIZE    (512 * 128)   // 64KB
+#define LOOPBACK_STORAGE_SIZE  1024
+#define LOOPBACK_BLOCK_SIZE    512
 
 
 #include <ctype.h>
@@ -190,6 +195,33 @@ void test_blockdevice(void) {
     test_api_size(heap);
     test_api_attribute(heap);
 
+    cleanup(heap);
+    blockdevice_heap_free(heap);
+
+    printf("Block device Loopback:\n");
+    heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
+    assert(heap != NULL);
+    setup(heap);
+    filesystem_t *fat = filesystem_fat_create();
+    assert(fat != NULL);
+    fs_format(fat, heap);
+    fs_mount("/", fat, heap);
+    blockdevice_t *loopback = blockdevice_loopback_create("/loopback",
+                                                          LOOPBACK_STORAGE_SIZE,
+                                                          LOOPBACK_BLOCK_SIZE);
+    assert(loopback != NULL);
+
+    test_api_init(loopback);
+    test_api_erase_program_read(loopback);
+    test_api_trim(loopback);
+    test_api_sync(loopback);
+    test_api_size(loopback);
+    test_api_attribute(loopback);
+
+    cleanup(loopback);
+    blockdevice_loopback_free(loopback);
+    fs_unmount("/");
+    filesystem_fat_free(fat);
     cleanup(heap);
     blockdevice_heap_free(heap);
 }

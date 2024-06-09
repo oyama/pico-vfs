@@ -1,0 +1,34 @@
+/*
+ * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <stdint.h>
+#include "blockdevice/blockdevice.h"
+
+/** Create loopback block device
+ *
+ * Create a loopback device object that uses a disk image file. Specify the file path allocated to the block device, as well as the maximum size capacity and block size block_size.
+ *
+ * @param path Disk image file path.
+ * @param capacity Maximum device size bytes.
+ * @param block_size Block size byte.
+ * @return Block device object. Returnes NULL in case of failure.
+ * @retval NUL Failed to create block device object.
+ */
+blockdevice_t *blockdevice_loopback_create(const char *path, size_t capacity, size_t block_size);
+
+/** Release the loopback device.
+ *
+ * @param device Block device object.
+ */
+void blockdevice_loopback_free(blockdevice_t *device);
+
+#ifdef __cplusplus
+}
+#endif
