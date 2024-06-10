@@ -15,7 +15,7 @@
 
 #define COLOR_GREEN(format)   ("\e[32m" format "\e[0m")
 #define BENCHMARK_SIZE        (0.6 * 1024 * 1024)
-#define BENCHMARK_SIZE_SMALL  (128 * 1024)
+#define BENCHMARK_SIZE_SMALL  (256 * 1024)
 #define BENCHMARK_SIZE_TINY   (100 * 1024)
 
 

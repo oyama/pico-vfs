@@ -136,7 +136,7 @@ static void _init_config(struct lfs_config *config, blockdevice_t *device) {
     config->prog_size = device->program_size;
     config->block_size = device->erase_size;
     config->block_count = device->size(device) / config->block_size;
-    config->cache_size = device->program_size;
+    config->cache_size = device->erase_size;
     config->context = device;
 }
 
