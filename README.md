@@ -43,7 +43,7 @@ If you want to customize the storage size, specify the required storage size in 
 ```CMakeLists.txt
 pico_enable_filesystem(${CMAKE_PROJECT_NAME} FS_SIZE 1441792)
 ```
-pico-vfs can be further customized. The sample program included in [examples/default\_fs/my\_fs\_init.c](examples/default_fs/my_fs_init.c) demonstrates mounting a FAT file system using an SD card as a block device and littlefs on the onboard flash memory in a single namespace.
+pico-vfs can be further customised. The examples included in [examples/fs_inits](examples/fs_inits) show example configurations of different file system combinations. For example, a FAT file system on SD card, and littlefs on on-board flash memory can be mounted in a single namespace.
 
 ## Architecture overview
 
