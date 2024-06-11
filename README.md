@@ -46,6 +46,7 @@ int main(void) {
     fclose(fp);
 }
 ```
+By default, 1.4MB of littlefs is mounted at /, and the Pico's onboard flash memory is used as a block device.
 
 ## Usage Guide
 
