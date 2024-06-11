@@ -170,6 +170,10 @@ bool fs_init(void) {
 
 Of course, a more bare-metal use, where only block devices are utilized, is also possible.
 
+## Limitations
+
+For detailed information on the limitations and considerations when using pico-vfs, especially with regard to multi-core operations, please see [LIMITATION.md](LIMITATION.md).
+
 ## Related Projects and Inspirations
 
 There are multiple ways to add filesystems to the pico-sdk environment. Firstly, FatFs[^1] and littlefs[^2] are popular file system implementations. These filesystem implementations require writing drivers for the block devices used. They also each have their own Unix-like API, but with a distinctive dialect.
