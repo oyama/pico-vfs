@@ -107,7 +107,7 @@ int fs_mount(const char *dir, filesystem_t *fs, blockdevice_t *device) {
     }
 
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
     for (size_t i = 0; i < FS_MAX_MOUNTPOINT; i++) {
         if (mountpoints[i].filesystem == NULL) {
             mountpoints[i].filesystem = fs;
@@ -123,7 +123,7 @@ int fs_mount(const char *dir, filesystem_t *fs, blockdevice_t *device) {
 
 int fs_unmount(const char *path) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
@@ -147,7 +147,7 @@ int fs_unmount(const char *path) {
 
 int fs_reformat(const char *path) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
@@ -178,7 +178,7 @@ int fs_info(const char *path, filesystem_t **fs, blockdevice_t **device) {
     (void)device;
 
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
@@ -194,7 +194,7 @@ int fs_info(const char *path, filesystem_t **fs, blockdevice_t **device) {
 
 int _unlink(const char *path) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
@@ -211,7 +211,7 @@ int _unlink(const char *path) {
 int rename(const char *old, const char *new) {
     // TODO: Check if old and new are the same filesystem
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
     mountpoint_t *mp = find_mountpoint(old);
     if (mp == NULL) {
         recursive_mutex_exit(&_mutex);
@@ -228,7 +228,7 @@ int rename(const char *old, const char *new) {
 
 int mkdir(const char *path, mode_t mode) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         recursive_mutex_exit(&_mutex);
@@ -243,7 +243,7 @@ int mkdir(const char *path, mode_t mode) {
 
 int rmdir(const char *path) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         recursive_mutex_exit(&_mutex);
@@ -258,7 +258,7 @@ int rmdir(const char *path) {
 
 int _stat(const char *path, struct stat *st) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
         recursive_mutex_exit(&_mutex);
@@ -273,7 +273,7 @@ int _stat(const char *path, struct stat *st) {
 
 int _fstat(int fildes, struct stat *st) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     if (fildes == STDIN_FILENO || fildes == STDOUT_FILENO || fildes == STDERR_FILENO) {
         recursive_mutex_exit(&_mutex);
@@ -403,7 +403,7 @@ static int _assign_dir_descriptor(void) {
 
 int _open(const char *path, int oflags, ...) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
@@ -442,7 +442,7 @@ int _open(const char *path, int oflags, ...) {
 
 int _close(int fildes) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     if (!is_valid_file_descriptor(fildes)) {
         printf("_close error fildes=%d\n", fildes);
@@ -490,7 +490,7 @@ static size_t pico_stdio_fallback_read(void *buf, size_t nbyte) {
 
 ssize_t _write(int fildes, const void *buf, size_t nbyte) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     if (fildes == STDOUT_FILENO || fildes == STDERR_FILENO) {
         pico_stdio_fallback_write(buf, nbyte);
@@ -508,13 +508,14 @@ ssize_t _write(int fildes, const void *buf, size_t nbyte) {
         return _error_remap(-EBADF);
     }
     ssize_t size = fs->file_write(fs, file, buf, nbyte);
+
     recursive_mutex_exit(&_mutex);
     return _error_remap(size);
 }
 
 ssize_t _read(int fildes, void *buf, size_t nbyte) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     if (fildes == STDIN_FILENO) {
         size_t read_bytes = pico_stdio_fallback_read(buf, nbyte);
@@ -540,7 +541,7 @@ ssize_t _read(int fildes, void *buf, size_t nbyte) {
 
 off_t _lseek(int fildes, off_t offset, int whence) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     if (!is_valid_file_descriptor(fildes)) {
         recursive_mutex_exit(&_mutex);
@@ -563,7 +564,7 @@ off_t _ftello_r(struct _reent *ptr, register FILE *fp) {
     (void)ptr;
     int fildes = fp->_file;
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     if (!is_valid_file_descriptor(fildes)) {
         recursive_mutex_exit(&_mutex);
@@ -584,7 +585,7 @@ off_t _ftello_r(struct _reent *ptr, register FILE *fp) {
 
 int ftruncate(int fildes, off_t length) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     if (!is_valid_file_descriptor(fildes)) {
         recursive_mutex_exit(&_mutex);
@@ -605,7 +606,7 @@ int ftruncate(int fildes, off_t length) {
 
 DIR *opendir(const char *path) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     mountpoint_t *mp = find_mountpoint(path);
     if (mp == NULL) {
@@ -646,7 +647,7 @@ DIR *opendir(const char *path) {
 
 int closedir(DIR *dir) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     int fd = dir->fd;
     fs_dir_t *_dir = dir_descriptor[dir->fd].dir;
@@ -665,7 +666,7 @@ int closedir(DIR *dir) {
 
 struct dirent *readdir(DIR *dir) {
     auto_init_recursive_mutex(_mutex);
-    recursive_mutex_enter_blocking (&_mutex);
+    recursive_mutex_enter_blocking(&_mutex);
 
     fs_dir_t *_dir = dir_descriptor[dir->fd].dir;
     filesystem_t *fs = dir_descriptor[dir->fd].filesystem;
