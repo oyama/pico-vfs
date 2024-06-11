@@ -21,7 +21,6 @@ typedef struct {
     mutex_t _mutex;
 } filesystem_littlefs_context_t;
 
-
 static const char FILESYSTEM_NAME[] = "littlefs";
 
 static int _error_remap(int err) {
