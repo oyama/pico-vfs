@@ -1,13 +1,21 @@
 # Thin virtual file system for Raspberry Pi Pico
 
-pico-vfs is a thin virtual file system for the Raspberry Pi Pico that seamlessly integrates POSIX file APIs, allowing users to interact with the file system using a standard interface. This library provides the convenience of performing standard file operations common in Unix environments directly on a microcontroller. It offers flexibility in combining various block devices and file systems, allowing developers to create more creative solutions without being constrained by the environment.
+Designed specifically for the Raspberry Pi Pico, `pico-vfs` is a virtual file system that allows users to efficiently and easily utilize different storage media such as onboard flash memory and SD cards using familiar POSIX and C standard file APIs. It streamlines file operations in embedded projects, providing a flexible and scalable file system.
 
-## Features
+## Key Features
 
-- **POSIX and C Standard File API Support:** In addition to basic POSIX file operations like `open`, `read`, `write`, and `close`, higher-level file operation functions such as `fprintf`, `fwrite`, and `fread` are also available. This enables intuitive and efficient file handling familiar to C language programmers.
-- **Modular Design:** The design of pico-vfs employs a multi-layer architecture consisting of a **block device** abstraction layer, a **file system** abstraction layer, and a **VFS** layer that integrates these into the POSIX API. This allows developers to easily select and swap underlying storage devices (e.g., flash memory, SD cards) and file systems (e.g., FAT, littlefs) without modifying application code.
-- **Virtual File System:** Multiple different file systems can be mounted into a single namespace and operated with a consistent API. Programmers can seamlessly operate without being aware of the differences in storage media and file systems.
-- **Pre-configured File System:** Includes a default file system setup to reduce initial setup time and complexity. Additionally, there is an `AUTO_INIT` feature that initializes the file system before the firmware's `main()` execution.
+- **POSIX and C Standard File API Support**: Users can perform basic POSIX file operations such as `open`, `read`, `write`, along with higher-level file functions like `fopen`, `fread`, `fwrite` enabling file operations in embedded projects with familiar APIs.
+- **Virtual File System**: Multiple different file systems can be mounted into a single namespace, allowing programs to operate without needing to consider differences in storage media and file systems.
+- **Pre-configured File System**: To reduce the time and complexity of initial setup, default file system configurations are included. Additionally, an `AUTO_INIT` feature is available to automatically initialize the file system before the execution of `main()`.
+- **Modular Design**: pico-vfs adopts a multi-layer architecture, allowing components such as the block device abstraction layer and the file system abstraction layer to be freely exchanged and added.
+
+## Modular Design Architecture
+
+pico-vfs employs an architecture designed to achieve efficient and flexible data management:
+
+- **Block Device Layer**: Abstracts differences in physical storage media such as SD cards and flash memory into a consistent interface, enabling developers to easily add or replace storage media.
+- **File System Layer**: Integrates different file systems such as littlefs and FAT seamlessly, providing transparent data access to applications.
+- **POSIX File API Layer**: Through the above layers, it offers a standard file API compliant with POSIX, used in desktop and server environments. This allows for immediate implementation of file operations like opening, reading, writing, and closing without the need for additional learning costs.
 
 ## Setup and Configuration
 
