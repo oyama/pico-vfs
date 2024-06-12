@@ -46,6 +46,7 @@ int main(void) {
     fclose(fp);
 }
 ```
+By default, 1.4MB of littlefs is mounted at /, and the Pico's onboard flash memory is used as a block device.
 
 ## Usage Guide
 
@@ -69,7 +70,7 @@ While there are several solutions that cover the problem of writing drivers for 
 
 Among multi-filesystem implementations, Memotech-Bill[^5] implementation provides standard I/O support for pico-sdk using the Newlib[^6] hook. The littlefs file system for on-board flash and FatFs for SD cards can be operated as an integrated file system. It is an ambitious project that goes beyond files and integrates character devices such as TTYs and UARTs.
 
-While referring to these existing projects, _pico-vfs_ aims to make the implementation of drivers and file systems for block devices separate and interchangeable, similar to MicroPython's VFS[^7] and ARM Mbed OS's Storage[^8].
+While referring to these existing projects, pico-vfs was developed with the aim of separating and making interchangeable the implementation of drivers and file systems for block devices. This provides functionality similar to that of MicroPython's VFS[^7]and ARM Mbed OS's Storage[^8].
 
 ## References
 
