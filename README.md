@@ -11,6 +11,21 @@ Designed specifically for the Raspberry Pi Pico, `pico-vfs` is a virtual file sy
 
 ## Modular Design Architecture
 
+```
++----------------------------+
+|      Application Code      |
++----------------------------+
+|       POSIX File API       |
++----------------------------+
+|      File System Layer     |
++----------------------------+
+|     Block Device Layer     |
++----------------------------+
+|   Physical Storage Media   |
+|   (Flash, SD card, Heap)   |
++----------------------------+
+```
+
 pico-vfs employs an architecture designed to achieve efficient and flexible data management:
 
 - **Block Device Layer**: Abstracts differences in physical storage media such as SD cards and flash memory into a consistent interface, enabling developers to easily add or replace storage media.
