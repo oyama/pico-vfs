@@ -6,9 +6,11 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <hardware/clocks.h>
 #include "blockdevice/flash.h"
 #include "blockdevice/heap.h"
 #include "blockdevice/loopback.h"
+#include "blockdevice/sd.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/vfs.h"
@@ -20,6 +22,11 @@
 #define LITTLEFS_LOOKAHEAD_SIZE  16
 #define MIN_FILENO               3
 #define BLOCKDEVICE_HEAP_SIZE    (64 * 1024)
+
+#define PICO_SPI1_TX_PIN   15
+#define PICO_SPI1_RX_PIN   12
+#define PICO_SPI1_SCK_PIN  19
+#define PICO_SPI1_CSN_PIN  17
 
 static void test_printf(const char *format, ...) {
     va_list args;
@@ -57,6 +64,26 @@ static void test_api_mount(filesystem_t *fs, blockdevice_t *device) {
 
     int err = fs_mount("/", fs, device);
     assert(err == 0);
+
+    printf(COLOR_GREEN("ok\n"));
+}
+
+static void test_api_format_error(filesystem_t *fs, blockdevice_t *device) {
+    test_printf("fs_format error");
+
+    int err = fs_format(fs, device);
+    assert(err == -1);
+    assert(errno == 5005);
+
+    printf(COLOR_GREEN("ok\n"));
+}
+
+static void test_api_mount_error(filesystem_t *fs, blockdevice_t *device) {
+    test_printf("fs_mount error");
+
+    int err = fs_mount("/", fs, device);
+    assert(err == -1);
+    assert(errno == 5005);
 
     printf(COLOR_GREEN("ok\n"));
 }
@@ -626,4 +653,23 @@ void test_vfs(void) {
     cleanup(flash);
     blockdevice_flash_free(flash);
     filesystem_littlefs_free(lfs);
+
+    printf("VFS not connected SD card error handling:\n");
+    blockdevice_t *sd = blockdevice_sd_create(spi1,  // SPI1 without connection
+                                              PICO_SPI1_TX_PIN,
+                                              PICO_SPI1_RX_PIN,
+                                              PICO_SPI1_SCK_PIN,
+                                              PICO_SPI1_CSN_PIN,
+                                              10 * MHZ,
+                                              false);
+    assert(sd != NULL);
+    fat = filesystem_fat_create();
+    assert(fat != NULL);
+    setup(sd);
+
+    test_api_format_error(fat, sd);
+    test_api_mount_error(fat, sd);
+
+    filesystem_fat_free(fat);
+    blockdevice_sd_free(sd);
 }
