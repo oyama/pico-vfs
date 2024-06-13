@@ -13,7 +13,7 @@ extern "C" {
 
 /** Create Raspberry Pi Pico On-board Flash block device
  *
- * Create a block device object that uses the Raspberry Pi Pico onboard flash memory. The start position of the flash memory to be allocated to the block device is specified by start and the length by length.
+ * Create a block device object that uses the Raspberry Pi Pico onboard flash memory. The start position of the flash memory to be allocated to the block device is specified by start and the length by length. start and length must be aligned to a flash sector of 4096 bytes.
  *
  * @param start Specifies the starting position of the flash memory to be allocated to the block device in bytes.
  * @param length Size in bytes to be allocated to the block device. If zero is specified, all remaining space is used.

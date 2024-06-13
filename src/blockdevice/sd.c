@@ -7,6 +7,7 @@
  * [ARM Mbed OS](https://github.com/ARMmbed/mbed-os/blob/master/storage/blockdevice/COMPONENT_SD/source/SDBlockDevice.cpp);
  * ARM Embed OS is licensed under the Apache 2.0 licence.
  */
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -1036,6 +1037,20 @@ blockdevice_t *blockdevice_sd_create(spi_inst_t *spi_inst,
                                      uint32_t hz,
                                      bool enable_crc)
 {
+    if (spi_inst == spi0) {
+        assert(mosi == 3 || mosi == 7 || mosi == 19 || mosi == 23);
+        assert(miso == 0 || miso == 4 || miso == 16 || miso == 20);
+        assert(sclk == 2 || sclk == 6 || sclk == 18 || sclk == 22);
+        // assert(cs == 1 || cs == 5 || cs == 17 || cs == 21);
+    } else if (spi_inst == spi1) {
+        assert(mosi == 11 || mosi == 15 || mosi == 27);
+        assert(miso == 8 || miso == 12 || mosi == 24 || mosi == 28);
+        assert(sclk == 10 || sclk == 14 || sclk == 26);
+        // assert(cs == 9 || cs == 13 || cs == 25 || cs == 29);
+    } else {
+        assert(spi_inst == spi0 || spi_inst == spi1);
+    }
+
     blockdevice_t *device = calloc(1, sizeof(blockdevice_t));
     if (device == NULL) {
         fprintf(stderr, "blockdevice_sd_create: Out of memory\n");

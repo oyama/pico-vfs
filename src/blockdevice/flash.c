@@ -2,6 +2,7 @@
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#include <assert.h>
 #include <hardware/flash.h>
 #include <hardware/regs/addressmap.h>
 #include <hardware/sync.h>
@@ -87,6 +88,9 @@ static size_t size(blockdevice_t *device) {
 }
 
 blockdevice_t *blockdevice_flash_create(uint32_t start, size_t length) {
+    assert(start % FLASH_SECTOR_SIZE == 0);
+    assert(length % FLASH_SECTOR_SIZE == 0);
+
     blockdevice_t *device = calloc(1, sizeof(blockdevice_t));
     if (device == NULL) {
         fprintf(stderr, "blockdevice_flash_create: Out of memory\n");

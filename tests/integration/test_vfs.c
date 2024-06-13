@@ -25,8 +25,8 @@
 
 #define PICO_SPI1_TX_PIN   15
 #define PICO_SPI1_RX_PIN   12
-#define PICO_SPI1_SCK_PIN  19
-#define PICO_SPI1_CSN_PIN  17
+#define PICO_SPI1_SCK_PIN  14
+#define PICO_SPI1_CSN_PIN  13
 
 static void test_printf(const char *format, ...) {
     va_list args;

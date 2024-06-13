@@ -35,7 +35,7 @@ bool fs_init(void);
  * @param fs File system object. Format the block device according to the specified file system.
  * @param device Block device used in the file system.
  * @retval 0 Format succeeded.
- * @retval <0 Format failed. Negative integer value indicates an error code.
+ * @retval -1 Format failed. Error codes are indicated by errno.
  */
 int fs_format(filesystem_t *fs, blockdevice_t *device);
 
@@ -47,7 +47,7 @@ int fs_format(filesystem_t *fs, blockdevice_t *device);
  * @param fs File system object.
  * @param device Block device used in the file system. Block devices must be formatted with a file system.
  * @retval 0 Mount succeeded.
- * @retval <0 Mount failed. Negative integer value indicates an error code.
+ * @retval -1 Mount failed. Error codes are indicated by errno.
  */
 int fs_mount(const char *path, filesystem_t *fs, blockdevice_t *device);
 
@@ -57,7 +57,7 @@ int fs_mount(const char *path, filesystem_t *fs, blockdevice_t *device);
  *
  * @param path Directory path of the mount point. Must be the same as the path specified for the mount.
  * @retval 0 Dismount succeeded.
- * @retval <0 Dismount failed. Negative integer value indicates an error code.
+ * @retval -1 Dismount failed. Error codes are indicated by errno.
  */
 int fs_unmount(const char *path);
 
@@ -67,7 +67,7 @@ int fs_unmount(const char *path);
  *
  * @param path Directory path of the mount point. Must be the same as the path specified for the mount.
  * @retval 0 Reformat suceeded.
- * @retval <0 Reformat failed. Negative integer value indicates an error code.
+ * @retval -1 Reformat failed. Error codes are indicated by errno.
  */
 int fs_reformat(const char *path);
 
@@ -77,7 +77,7 @@ int fs_reformat(const char *path);
  * @param fs Pointer references to filesystem objects
  * @param device Pinter references to blockdevice objects
  * @retval 0 Lookup succeeded
- * @retval <0 Lookup failed. Negative integer value indicates an error code.
+ * @retval -1 Lookup failed. Error codes are indicated by errno.
  */
 int fs_info(const char *path, filesystem_t **fs, blockdevice_t **device);
 
