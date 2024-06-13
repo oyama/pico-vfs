@@ -20,7 +20,7 @@
 #define COLOR_RED(format)    ("\e[31m" format "\e[0m")
 #define COLOR_GREEN(format)  ("\e[32m" format "\e[0m")
 #define BENCHMARK_SIZE       (1.0 * 1024 * 1024)
-
+#define BUFFER_SIZE          (1024 * 64)
 
 struct combination_map {
     blockdevice_t *device;
@@ -30,6 +30,20 @@ struct combination_map {
 #define NUM_COMBINATION    4
 static struct combination_map combination[NUM_COMBINATION];
 
+static void print_progress(const char *label, size_t current, size_t total) {
+    int num_dots = (int)((double)current / total * (50 - strlen(label)));
+    int num_spaces = (50 - strlen(label)) - num_dots;
+
+    printf("\r%s ", label);
+    for (int i = 0; i < num_dots; i++) {
+        printf(".");
+    }
+    for (int i = 0; i < num_spaces; i++) {
+        printf(" ");
+    }
+    printf(" %zu/%zu bytes", current, total);
+    fflush(stdout);
+}
 
 static void init_filesystem_combination(void) {
     blockdevice_t *flash = blockdevice_flash_create(0.5 * 1024 * 1024, 0);
@@ -42,10 +56,10 @@ static void init_filesystem_combination(void) {
                                               false);
     filesystem_t *fat = filesystem_fat_create();
     filesystem_t *littlefs = filesystem_littlefs_create(500, 16);
-    combination[0] = (struct combination_map){.device = flash, .filesystem = fat};
-    combination[1] = (struct combination_map){.device = flash, .filesystem = littlefs};
-    combination[2] = (struct combination_map){.device = sd, .filesystem = fat};
-    combination[3] = (struct combination_map){.device = sd, .filesystem = littlefs};
+    combination[0] = (struct combination_map){.device = flash, .filesystem = littlefs};
+    combination[1] = (struct combination_map){.device = flash, .filesystem = fat};
+    combination[2] = (struct combination_map){.device = sd, .filesystem = littlefs};
+    combination[3] = (struct combination_map){.device = sd, .filesystem = fat};
 }
 
 static uint32_t xor_rand(uint32_t *seed) {
@@ -60,7 +74,7 @@ static uint32_t xor_rand_32bit(uint32_t *seed) {
 }
 
 static void benchmark_write(void) {
-    printf("Write ");
+    const char *label = "Write";
     uint64_t start_at = get_absolute_time();
 
     int fd = open("/benchmark", O_WRONLY|O_CREAT);
@@ -71,7 +85,7 @@ static void benchmark_write(void) {
 
     uint32_t counter = 0;
     xor_rand(&counter);
-    uint8_t buffer[1024*64] = {0};
+    uint8_t buffer[BUFFER_SIZE] = {0};
     size_t remind = BENCHMARK_SIZE;
     while (remind > 0) {
         size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
@@ -79,13 +93,14 @@ static void benchmark_write(void) {
         for (size_t j = 0; j < (chunk / sizeof(uint32_t)); j++) {
             b[j] = xor_rand_32bit(&counter);
         }
+
         ssize_t write_size = write(fd, buffer, chunk);
         if (write_size == -1) {
             printf("write: error: %s\n", strerror(errno));
             return;
         }
-        printf(".");
         remind = remind - write_size;
+        print_progress(label, BENCHMARK_SIZE - remind, BENCHMARK_SIZE);
     }
 
     int err = close(fd);
@@ -99,7 +114,7 @@ static void benchmark_write(void) {
 }
 
 static void benchmark_read(void) {
-    printf("Read  ");
+    const char *label = "Read";
     uint64_t start_at = get_absolute_time();
 
     int fd = open("/benchmark", O_RDONLY);
@@ -110,7 +125,7 @@ static void benchmark_read(void) {
 
     uint32_t counter = 0;
     xor_rand(&counter);
-    uint8_t buffer[1024*64] = {0};
+    uint8_t buffer[BUFFER_SIZE] = {0};
     size_t remind = BENCHMARK_SIZE;
     while (remind > 0) {
         size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
@@ -119,7 +134,8 @@ static void benchmark_read(void) {
             printf("read error: %s\n", strerror(errno));
             return;
         }
-        uint32_t *b = (uint32_t *)buffer;
+
+       uint32_t *b = (uint32_t *)buffer;
         for (size_t j = 0; j < chunk / sizeof(uint32_t); j++) {
             volatile uint32_t v = xor_rand_32bit(&counter);
             if (b[j] != v) {
@@ -127,8 +143,8 @@ static void benchmark_read(void) {
                 return;
             }
         }
-        printf(".");
         remind = remind - read_size;
+        print_progress(label, BENCHMARK_SIZE - remind, BENCHMARK_SIZE);
     }
 
     int err = close(fd);

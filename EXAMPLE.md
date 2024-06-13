@@ -7,12 +7,9 @@
 | [benchmark](benchmark)| Data transfer tests with different block devices and different file system combinations.|
 | [usb\_msc\_logger](usb_msc_logger) | Data logger that mounts littlefs and FAT on flash memory and shares it with a PC via USB mass storage class.|
 
-
-Examples include benchmark test firmware for combinations of heterogeneous block devices and heterogeneous file systems, and logger firmware that splits the on-board flash memory in two and uses it with different file systems.
+## Building sample code
 
 The [pico-sdk](https://github.com/raspberrypi/pico-sdk) build environment is required to build the demonstration, see  [Getting started with Raspberry Pi Pico](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf) to prepare the toolchain for your platform. This project contains a _git submodule_. When cloning, the `--recursive` option must be given or a separate `git submodule update` must be performed.
-
-## Building sample code
 
 Firmware can be built from the _CMake_ build directory of _pico-vfs_.
 
@@ -21,6 +18,7 @@ mkdir build; cd build/
 PICO_SDK_PATH=/path/to/pico-sdk cmake ..
 make hello fs_init_example benchmark logger
 ```
+
 ### Circuit Diagram
 
 If an SD card is to be used, a separate circuit must be connected via SPI. As an example, the schematic using the [Adafruit MicroSD card breakout board+](https://www.adafruit.com/product/254) is as follows

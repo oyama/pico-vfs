@@ -23,6 +23,8 @@
 #define FLASH_START_AT      (0.5 * 1024 * 1024)
 #define FLASH_LENGTH_ALL    0
 
+static uint8_t core1_buffer[1024*16];
+static uint8_t core0_buffer[1024*16];
 
 struct combination_map {
     blockdevice_t *device;
@@ -96,16 +98,14 @@ static void print_progress(const char *label, size_t current, size_t total) {
 
 static void __not_in_flash_func(test_write_read_two_files_core1)(void) {
     int fd = open("/core1", O_WRONLY|O_CREAT);
-
-    uint8_t buffer[512] = {0};
     size_t remind = TEST_FILE_SIZE;
     unsigned seed = 1;
     while (remind > 0) {
-        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
+        size_t chunk = remind % sizeof(core1_buffer) ? remind % sizeof(core1_buffer) : sizeof(core1_buffer);
         for (size_t i = 0; i < (size_t)chunk; i++) {
-            buffer[i] = rand_r(&seed) & 0xFF;
+            core1_buffer[i] = rand_r(&seed) & 0xFF;
         }
-        ssize_t write_size = write(fd, buffer, chunk);
+        ssize_t write_size = write(fd, core1_buffer, chunk);
         assert(write_size != -1);
         remind = remind - write_size;
     }
@@ -118,12 +118,12 @@ static void __not_in_flash_func(test_write_read_two_files_core1)(void) {
     seed = 1;
     remind = TEST_FILE_SIZE;
     while (remind > 0) {
-        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
-        ssize_t read_size = read(fd, buffer, chunk);
+        size_t chunk = remind % sizeof(core1_buffer) ? remind % sizeof(core1_buffer) : sizeof(core1_buffer);
+        ssize_t read_size = read(fd, core1_buffer, chunk);
         assert(read_size != -1);
         for (size_t i = 0; i < (size_t)read_size; i++) {
             volatile uint8_t r = rand_r(&seed) & 0xFF;
-            assert(buffer[i] == r);
+            assert(core1_buffer[i] == r);
         }
         remind = remind - read_size;
     }
@@ -148,15 +148,14 @@ static void test_write_read_two_files(void) {
     multicore_launch_core1(test_write_read_two_files_core1);
 
     int fd = open("/core0", O_WRONLY|O_CREAT);
-    uint8_t buffer[512] = {0};
     size_t remind = TEST_FILE_SIZE;
     unsigned seed = 0;
     while (remind > 0) {
-        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
+        size_t chunk = remind % sizeof(core0_buffer) ? remind % sizeof(core0_buffer) : sizeof(core0_buffer);
         for (size_t i = 0; i < (size_t)chunk; i++) {
-            buffer[i] = rand_r(&seed) & 0xFF;
+            core0_buffer[i] = rand_r(&seed) & 0xFF;
         }
-        ssize_t write_size = write(fd, buffer, chunk);
+        ssize_t write_size = write(fd, core0_buffer, chunk);
         assert(write_size != -1);
         remind = remind - write_size;
 
@@ -172,13 +171,13 @@ static void test_write_read_two_files(void) {
     seed = 0;
     remind = TEST_FILE_SIZE;
     while (remind > 0) {
-        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
-        ssize_t read_size = read(fd, buffer, chunk);
+        size_t chunk = remind % sizeof(core0_buffer) ? remind % sizeof(core0_buffer) : sizeof(core0_buffer);
+        ssize_t read_size = read(fd, core0_buffer, chunk);
         assert(read_size != -1);
 
         for (size_t i = 0; i < (size_t)read_size; i++) {
             volatile uint8_t r = rand_r(&seed) & 0xFF;
-            assert(buffer[i] == r);
+            assert(core0_buffer[i] == r);
         }
         remind = remind - read_size;
         print_progress(label, TEST_FILE_SIZE * 2 - remind, TEST_FILE_SIZE * 2);
@@ -195,16 +194,14 @@ static void test_write_read_two_files(void) {
 
 static void __not_in_flash_func(test_write_while_read_two_files_core1)(void) {
     int fd = open("/core1", O_WRONLY|O_CREAT);
-
-    uint8_t buffer[512] = {0};
     size_t remind = TEST_FILE_SIZE;
     unsigned seed = 1;
     while (remind > 0) {
-        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
+        size_t chunk = remind % sizeof(core1_buffer) ? remind % sizeof(core1_buffer) : sizeof(core1_buffer);
         for (size_t i = 0; i < (size_t)chunk; i++) {
-            buffer[i] = rand_r(&seed) & 0xFF;
+            core1_buffer[i] = rand_r(&seed) & 0xFF;
         }
-        ssize_t write_size = write(fd, buffer, chunk);
+        ssize_t write_size = write(fd, core1_buffer, chunk);
         assert(write_size != -1);
         remind = remind - write_size;
     }
@@ -217,12 +214,12 @@ static void __not_in_flash_func(test_write_while_read_two_files_core1)(void) {
     seed = 1;
     remind = TEST_FILE_SIZE;
     while (remind > 0) {
-        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
-        ssize_t read_size = read(fd, buffer, chunk);
+        size_t chunk = remind % sizeof(core1_buffer) ? remind % sizeof(core1_buffer) : sizeof(core1_buffer);
+        ssize_t read_size = read(fd, core1_buffer, chunk);
         assert(read_size != -1);
         for (size_t i = 0; i < (size_t)read_size; i++) {
             volatile uint8_t r = rand_r(&seed) & 0xFF;
-            assert(buffer[i] == r);
+            assert(core1_buffer[i] == r);
         }
         remind = remind - read_size;
     }
@@ -247,18 +244,17 @@ static void test_write_while_read_two_files(void) {
 
     int fd = open("/core0", O_RDONLY);
     assert(fd != 0);
-    uint8_t buffer[512] = {0};
 
     unsigned seed = 0;
     size_t remind = TEST_FILE_SIZE;
     while (remind > 0) {
-        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
-        ssize_t read_size = read(fd, buffer, chunk);
+        size_t chunk = remind % sizeof(core0_buffer) ? remind % sizeof(core0_buffer) : sizeof(core0_buffer);
+        ssize_t read_size = read(fd, core0_buffer, chunk);
         assert(read_size != -1);
 
         for (size_t i = 0; i < (size_t)read_size; i++) {
             volatile uint8_t r = rand_r(&seed) & 0xFF;
-            assert(buffer[i] == r);
+            assert(core0_buffer[i] == r);
         }
         remind = remind - read_size;
         print_progress(label, TEST_FILE_SIZE - remind, TEST_FILE_SIZE * 2);
@@ -274,11 +270,11 @@ static void test_write_while_read_two_files(void) {
     remind = TEST_FILE_SIZE;
     seed = 0;
     while (remind > 0) {
-        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
+        size_t chunk = remind % sizeof(core0_buffer) ? remind % sizeof(core0_buffer) : sizeof(core0_buffer);
         for (size_t i = 0; i < (size_t)chunk; i++) {
-            buffer[i] = rand_r(&seed) & 0xFF;
+            core0_buffer[i] = rand_r(&seed) & 0xFF;
         }
-        ssize_t write_size = write(fd, buffer, chunk);
+        ssize_t write_size = write(fd, core0_buffer, chunk);
         assert(write_size != -1);
         remind = remind - write_size;
         print_progress(label, TEST_FILE_SIZE * 2 - remind, TEST_FILE_SIZE * 2);
@@ -292,7 +288,6 @@ static void test_write_while_read_two_files(void) {
 
     printf(COLOR_GREEN(" ok\n"));
 }
-
 
 static bool setup(filesystem_t *fs, blockdevice_t *device) {
     int err = fs_format(fs, device);

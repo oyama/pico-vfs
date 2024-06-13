@@ -1,6 +1,6 @@
 # Benchmark demo
 add_executable(benchmark main.c)
-target_compile_options(benchmark PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
+target_compile_options(benchmark PRIVATE -O2 -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(benchmark PRIVATE
   pico_stdlib
   blockdevice_sd
