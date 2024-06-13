@@ -21,8 +21,6 @@ mkdir build; cd build/
 PICO_SDK_PATH=/path/to/pico-sdk cmake ..
 make hello fs_init_example benchmark logger
 ```
-If no SD card device is connected, the `-DWITHOUT_BLOCKDEVICE_SD` option can be specified to skip the SD card manipulation procedure from the demo and unit tests.
-
 ### Circuit Diagram
 
 If an SD card is to be used, a separate circuit must be connected via SPI. As an example, the schematic using the [Adafruit MicroSD card breakout board+](https://www.adafruit.com/product/254) is as follows

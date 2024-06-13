@@ -9,8 +9,5 @@ target_link_libraries(benchmark PRIVATE
   filesystem_littlefs
   filesystem_vfs
 )
-if(WITHOUT_BLOCKDEVICE_SD)
-  target_compile_definitions(benchmark PRIVATE WITHOUT_BLOCKDEVICE_SD=1)
-endif()
 pico_enable_stdio_usb(benchmark 1)
 pico_add_extra_outputs(benchmark)

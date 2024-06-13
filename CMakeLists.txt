@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.13...3.27)
 
-option(WITHOUT_BLOCKDEVICE_SD "without SD block device in demo and tests")
-
 include(vendor/pico_sdk_import.cmake)
 include(pico_vfs.cmake)
 set(FAMILY rp2040)
