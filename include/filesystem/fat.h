@@ -12,7 +12,20 @@ extern "C" {
 
 #define FFS_DBG  0
 
+
+/*! \brief Create FAT file system object
+ *
+ * Create FAT file system object.
+ *
+ * \return File system object. Returns NULL in case of failure.
+ * \retval NULL failed to create file system object.
+ */
 filesystem_t *filesystem_fat_create();
+
+/*! \brief Release FAT file system object
+ *
+ * \param fs FAT file system object
+ */
 void filesystem_fat_free(filesystem_t *fs);
 
 #ifdef __cplusplus

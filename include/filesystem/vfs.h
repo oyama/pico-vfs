@@ -18,75 +18,75 @@ extern "C" {
 #define PICO_FS_DEFAULT_SIZE         (1408 * 1024)   // Can share storage with MicroPython for RP2
 #endif
 
-/** Enable predefined file systems
+/*! \brief Enable predefined file systems
  *
  * This default function defines the block device and file system, formats it if necessary and then mounts it on `/` to make it available.
  * The `pico_enable_filesystem` function in CMakeLists.txt provides a default or user-defined fs_init function.
  *
- * @retval true Init succeeded.
- * @retval false Init failed.
+ * \retval true Init succeeded.
+ * \retval false Init failed.
  */
 bool fs_init(void);
 
-/** Format block device with specify file system
+/*! \brief Format block device with specify file system
  *
  * Block devices can be formatted and made available as a file system.
  *
- * @param fs File system object. Format the block device according to the specified file system.
- * @param device Block device used in the file system.
- * @retval 0 Format succeeded.
- * @retval -1 Format failed. Error codes are indicated by errno.
+ * \param fs File system object. Format the block device according to the specified file system.
+ * \param device Block device used in the file system.
+ * \retval 0 Format succeeded.
+ * \retval -1 Format failed. Error codes are indicated by errno.
  */
 int fs_format(filesystem_t *fs, blockdevice_t *device);
 
-/** Mount a file system
+/*! \brief Mount a file system
  *
  * Mounts a file system with block devices at the specified path.
  *
- * @param path Directory path of the mount point. Specify a string beginning with a slash.
- * @param fs File system object.
- * @param device Block device used in the file system. Block devices must be formatted with a file system.
- * @retval 0 Mount succeeded.
- * @retval -1 Mount failed. Error codes are indicated by errno.
+ * \param path Directory path of the mount point. Specify a string beginning with a slash.
+ * \param fs File system object.
+ * \param device Block device used in the file system. Block devices must be formatted with a file system.
+ * \retval 0 Mount succeeded.
+ * \retval -1 Mount failed. Error codes are indicated by errno.
  */
 int fs_mount(const char *path, filesystem_t *fs, blockdevice_t *device);
 
-/** Dismount a file system
+/*! \brief Dismount a file system
  *
  * Dismount a file system.
  *
- * @param path Directory path of the mount point. Must be the same as the path specified for the mount.
- * @retval 0 Dismount succeeded.
- * @retval -1 Dismount failed. Error codes are indicated by errno.
+ * \param path Directory path of the mount point. Must be the same as the path specified for the mount.
+ * \retval 0 Dismount succeeded.
+ * \retval -1 Dismount failed. Error codes are indicated by errno.
  */
 int fs_unmount(const char *path);
 
-/** Reformat the mounted file system
+/*! \brief Reformat the mounted file system
  *
  * Reformat a file system mounted at the specified path.
  *
- * @param path Directory path of the mount point. Must be the same as the path specified for the mount.
- * @retval 0 Reformat suceeded.
- * @retval -1 Reformat failed. Error codes are indicated by errno.
+ * \param path Directory path of the mount point. Must be the same as the path specified for the mount.
+ * \retval 0 Reformat suceeded.
+ * \retval -1 Reformat failed. Error codes are indicated by errno.
  */
 int fs_reformat(const char *path);
 
-/** Lookup filesystem and blockdevice objects from a mount point
+/*! \brief Lookup filesystem and blockdevice objects from a mount point
  *
- * @param path Directory path of the mount point. Must be the same as the path specified for the mount.
- * @param fs Pointer references to filesystem objects
- * @param device Pinter references to blockdevice objects
- * @retval 0 Lookup succeeded
- * @retval -1 Lookup failed. Error codes are indicated by errno.
+ * \param path Directory path of the mount point. Must be the same as the path specified for the mount.
+ * \param fs Pointer references to filesystem objects
+ * \param device Pinter references to blockdevice objects
+ * \retval 0 Lookup succeeded
+ * \retval -1 Lookup failed. Error codes are indicated by errno.
  */
 int fs_info(const char *path, filesystem_t **fs, blockdevice_t **device);
 
-/** File system error message
+/*! \brief File system error message
  *
  * Convert the error code reported in the negative integer into a string.
  *
- * @param error Negative error code returned by the file system.
- * @return Pointer to the corresponding message string.
+ * \param error Negative error code returned by the file system.
+ * \return Pointer to the corresponding message string.
  */
 char *fs_strerror(int error);
 
