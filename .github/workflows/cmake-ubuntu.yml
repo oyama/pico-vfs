@@ -51,4 +51,4 @@ jobs:
     - name: Build
       working-directory: ${{github.workspace}}/pico-vfs/build
       shell: bash
-      run: cmake --build . --target tests --config $BUILD_TYPE
+      run: cmake --build . --target integration --config $BUILD_TYPE
