@@ -20,19 +20,13 @@ struct combination_map {
     filesystem_t *filesystem2;
 };
 
-#if defined(WITHOUT_BLOCKDEVICE_SD)
-#define NUM_COMBINATION    3
-#else
 #define NUM_COMBINATION    6
-#endif
-
 static struct combination_map combination[NUM_COMBINATION];
 
 
 static void init_filesystem_combination(void) {
     blockdevice_t *flash1 = blockdevice_flash_create(1 * 1024 * 1024, 512 * 1024);
     blockdevice_t *flash2 = blockdevice_flash_create(1 * 1024 * 1024 + 512 * 1024, 0);
-#if !defined(WITHOUT_BLOCKDEVICE_SD)
     blockdevice_t *sd = blockdevice_sd_create(spi0,
                                               PICO_DEFAULT_SPI_TX_PIN,
                                               PICO_DEFAULT_SPI_RX_PIN,
@@ -40,7 +34,6 @@ static void init_filesystem_combination(void) {
                                               PICO_DEFAULT_SPI_CSN_PIN,
                                               24 * MHZ,
                                               true);
-#endif
     filesystem_t *fat1 = filesystem_fat_create();
     filesystem_t *fat2 = filesystem_fat_create();
     filesystem_t *littlefs1 = filesystem_littlefs_create(500, 16);
@@ -55,7 +48,6 @@ static void init_filesystem_combination(void) {
     combination[2] = (struct combination_map){
         .device1 = flash1, .filesystem1 = littlefs1, .device2 = flash2, .filesystem2 = littlefs2,
     };
-#if !defined(WITHOUT_BLOCKDEVICE_SD)
     combination[3] = (struct combination_map){
         .device1 = flash1, .filesystem1 = fat1, .device2 = sd, .filesystem2 = fat2,
     };
@@ -65,7 +57,6 @@ static void init_filesystem_combination(void) {
     combination[5] = (struct combination_map){
         .device1 = flash1, .filesystem1 = littlefs1, .device2 = sd, .filesystem2 = littlefs2,
     };
-#endif
 }
 
 #define TEST_FILE_SIZE  100 * 1024;
@@ -155,8 +146,16 @@ void test_copy_between_different_filesystems(void) {
                     setting.filesystem2->name, setting.device2->name);
 
         int err = fs_format(setting.filesystem1, setting.device1);
+        if (err == -1 && errno == 5005) {
+            printf("skip, device not connected\n");
+            continue;
+        }
         assert(err == 0);
         err = fs_format(setting.filesystem2, setting.device2);
+        if (err == -1 && errno == 5005) {
+            printf("skip, device not connected\n");
+            continue;
+        }
         assert(err == 0);
 
         err = fs_mount("/a", setting.filesystem1, setting.device1);

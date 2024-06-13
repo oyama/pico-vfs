@@ -30,19 +30,12 @@ struct combination_map {
     const char *label;
 };
 
-#if defined(WITHOUT_BLOCKDEVICE_SD)
-#define NUM_COMBINATION    2
-#else
 #define NUM_COMBINATION    4
-#endif
-
-
 static struct combination_map combination[NUM_COMBINATION] = {0};
 
 static void init_filesystem_combination(void) {
     blockdevice_t *flash = blockdevice_flash_create(PICO_FLASH_SIZE_BYTES - PICO_FS_DEFAULT_SIZE,
                                                     FLASH_LENGTH_ALL);
-#if !defined(WITHOUT_BLOCKDEVICE_SD)
     blockdevice_t *sd = blockdevice_sd_create(spi0,
                                               PICO_DEFAULT_SPI_TX_PIN,
                                               PICO_DEFAULT_SPI_RX_PIN,
@@ -50,7 +43,6 @@ static void init_filesystem_combination(void) {
                                               PICO_DEFAULT_SPI_CSN_PIN,
                                               24 * MHZ,
                                               true);
-#endif
     filesystem_t *fat = filesystem_fat_create();
     filesystem_t *littlefs = filesystem_littlefs_create(500, 16);
 
@@ -60,23 +52,19 @@ static void init_filesystem_combination(void) {
     combination[1] = (struct combination_map){
         .device = flash, .filesystem = fat, .label = "FAT on Flash"
     };
-#if !defined(WITHOUT_BLOCKDEVICE_SD)
     combination[2] = (struct combination_map){
         .device = sd, .filesystem = littlefs, .label = "littlefs on SD card"
     };
     combination[3] = (struct combination_map){
         .device = sd, .filesystem = fat, .label = "FAT on SD card"
     };
-#endif
 }
 
 static void cleanup_combination(void) {
     filesystem_littlefs_free(combination[0].filesystem);
     filesystem_fat_free(combination[1].filesystem);
     blockdevice_flash_free(combination[0].device);
-#if !defined(WITHOUT_BLOCKDEVICE_SD)
     blockdevice_sd_free(combination[2].device);
-#endif
 }
 
 static size_t test_printf(const char *format, ...) {
@@ -306,11 +294,14 @@ static void test_write_while_read_two_files(void) {
 }
 
 
-static void setup(filesystem_t *fs, blockdevice_t *device) {
+static bool setup(filesystem_t *fs, blockdevice_t *device) {
     int err = fs_format(fs, device);
+    if (err == -1 && errno == 5005)
+        return false;
     assert(err == 0);
     err = fs_mount("/", fs, device);
     assert(err == 0);
+    return true;
 }
 
 static void cleanup() {
@@ -327,7 +318,10 @@ int main(void) {
         struct combination_map *setting = &combination[i];
         printf("%s:\n", setting->label);
 
-        setup(setting->filesystem, setting->device);
+        if (!setup(setting->filesystem, setting->device)) {
+            printf("skip, device not connected\n");
+            continue;
+        }
 
         test_write_read_two_files();
         test_write_while_read_two_files();

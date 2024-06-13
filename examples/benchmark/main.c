@@ -27,23 +27,12 @@ struct combination_map {
     filesystem_t *filesystem;
 };
 
-#if !defined(WITHOUT_BLOCKDEVICE_SD)
 #define NUM_COMBINATION    4
-#else
-#define NUM_COMBINATION    2
-#endif
-
 static struct combination_map combination[NUM_COMBINATION];
 
 
 static void init_filesystem_combination(void) {
     blockdevice_t *flash = blockdevice_flash_create(0.5 * 1024 * 1024, 0);
-    filesystem_t *fat = filesystem_fat_create();
-    filesystem_t *littlefs = filesystem_littlefs_create(500, 16);
-    combination[0] = (struct combination_map){.device = flash, .filesystem = fat};
-    combination[1] = (struct combination_map){.device = flash, .filesystem = littlefs};
-
-#if !defined(WITHOUT_BLOCKDEVICE_SD)
     blockdevice_t *sd = blockdevice_sd_create(spi0,
                                               PICO_DEFAULT_SPI_TX_PIN,
                                               PICO_DEFAULT_SPI_RX_PIN,
@@ -51,9 +40,12 @@ static void init_filesystem_combination(void) {
                                               PICO_DEFAULT_SPI_CSN_PIN,
                                               24 * MHZ,
                                               false);
+    filesystem_t *fat = filesystem_fat_create();
+    filesystem_t *littlefs = filesystem_littlefs_create(500, 16);
+    combination[0] = (struct combination_map){.device = flash, .filesystem = fat};
+    combination[1] = (struct combination_map){.device = flash, .filesystem = littlefs};
     combination[2] = (struct combination_map){.device = sd, .filesystem = fat};
     combination[3] = (struct combination_map){.device = sd, .filesystem = littlefs};
-#endif
 }
 
 static uint32_t xor_rand(uint32_t *seed) {
@@ -158,6 +150,10 @@ int main(void) {
         printf("Test of %s on %s:\n", setting.filesystem->name, setting.device->name);
 
         int err = fs_format(setting.filesystem, setting.device);
+        if (err == -1 && errno == 5005) {
+            printf("skip, device not connected\n");
+            continue;
+        }
         if (err == -1) {
             printf("fs_format error: %s\n", strerror(errno));
             return -1;
