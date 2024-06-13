@@ -6,14 +6,18 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <hardware/clocks.h>
+#include "blockdevice/flash.h"
 #include "blockdevice/heap.h"
 #include "blockdevice/loopback.h"
+#include "blockdevice/sd.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/vfs.h"
 
 #define COLOR_GREEN(format)      ("\e[32m" format "\e[0m")
-#define HEAP_STORAGE_SIZE        (128 * 1024)
+#define FLASH_START_AT           (0.5 * 1024 * 1024)
+#define FLASH_LENGTH_ALL         0
 #define LITTLEFS_BLOCK_CYCLE     500
 #define LITTLEFS_LOOKAHEAD_SIZE  16
 #define MIN_FILENO               3
@@ -503,7 +507,7 @@ static void test_loopback_file(void) {
     test_printf("loopback image file");
 
     struct stat finfo;
-    int err = stat("/heap/loopback.dmg", &finfo);
+    int err = stat("/flash/loopback.dmg", &finfo);
     assert(err == 0);
     assert(finfo.st_mode & S_IFREG);
     assert((size_t)finfo.st_size > 0);
@@ -513,14 +517,14 @@ static void test_loopback_file(void) {
 
 void test_vfs(void) {
     printf("VFS FAT:\n");
-    blockdevice_t *heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
-    assert(heap != NULL);
+    blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+    assert(flash != NULL);
     filesystem_t *fat = filesystem_fat_create();
     assert(fat != NULL);
-    setup(heap);
+    setup(flash);
 
-    test_api_format(fat, heap);
-    test_api_mount(fat, heap);
+    test_api_format(fat, flash);
+    test_api_mount(fat, flash);
     test_api_file_open_close();
     test_api_file_open_many();
     test_api_file_write_read();
@@ -536,22 +540,22 @@ void test_vfs(void) {
     test_api_dir_read();
     test_api_reformat();
     test_api_unmount();
-    test_api_mount_unmount_repeat(fat, heap);
+    test_api_mount_unmount_repeat(fat, flash);
 
-    cleanup(heap);
+    cleanup(flash);
+    blockdevice_flash_free(flash);
     filesystem_fat_free(fat);
-    blockdevice_heap_free(heap);
 
     printf("VFS littlefs:\n");
-    heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
-    assert(heap != NULL);
+    flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+    assert(flash != NULL);
     filesystem_t *lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
                                                    LITTLEFS_LOOKAHEAD_SIZE);
     assert(lfs != NULL);
-    setup(heap);
+    setup(flash);
 
-    test_api_format(lfs, heap);
-    test_api_mount(lfs, heap);
+    test_api_format(lfs, flash);
+    test_api_mount(lfs, flash);
     test_api_file_open_close();
     test_api_file_open_many();
     test_api_file_write_read();
@@ -567,14 +571,14 @@ void test_vfs(void) {
     test_api_dir_read();
     test_api_reformat();
     test_api_unmount();
-    test_api_mount_unmount_repeat(lfs, heap);
+    test_api_mount_unmount_repeat(lfs, flash);
 
-    cleanup(heap);
-    blockdevice_heap_free(heap);
+    cleanup(flash);
+    blockdevice_flash_free(flash);
     filesystem_littlefs_free(lfs);
 
     printf("VFS littlefs on the Heap:\n");
-    heap = blockdevice_heap_create(BLOCKDEVICE_HEAP_SIZE);
+    blockdevice_t *heap = blockdevice_heap_create(BLOCKDEVICE_HEAP_SIZE);
     assert(heap != NULL);
     lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
                                      LITTLEFS_LOOKAHEAD_SIZE);
@@ -606,18 +610,18 @@ void test_vfs(void) {
 
 
     printf("VFS loopback FAT on littlefs:\n");
-    heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
-    assert(heap != NULL);
+    flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+    assert(flash != NULL);
     lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
                                      LITTLEFS_LOOKAHEAD_SIZE);
     assert(lfs != NULL);
-    setup(heap);
-    int err = fs_format(lfs, heap);
+    setup(flash);
+    int err = fs_format(lfs, flash);
     assert(err == 0);
-    err = fs_mount("/heap", lfs, heap);
+    err = fs_mount("/flash", lfs, flash);
     assert(err == 0);
 
-    blockdevice_t *loopback = blockdevice_loopback_create("/heap/loopback.dmg", 64 * 1024, 512);
+    blockdevice_t *loopback = blockdevice_loopback_create("/flash/loopback.dmg", 64 * 1024, 512);
     fat = filesystem_fat_create();
     assert(loopback != NULL);
     assert(fat != NULL);
@@ -645,8 +649,27 @@ void test_vfs(void) {
 
     test_loopback_file();
 
-    fs_unmount("/heap");
-    cleanup(heap);
+    fs_unmount("/flash");
+    cleanup(flash);
+    blockdevice_flash_free(flash);
     filesystem_littlefs_free(lfs);
-    blockdevice_heap_free(heap);
+
+    printf("VFS not connected SD card error handling:\n");
+    blockdevice_t *sd = blockdevice_sd_create(spi1,  // SPI1 without connection
+                                              PICO_SPI1_TX_PIN,
+                                              PICO_SPI1_RX_PIN,
+                                              PICO_SPI1_SCK_PIN,
+                                              PICO_SPI1_CSN_PIN,
+                                              10 * MHZ,
+                                              false);
+    assert(sd != NULL);
+    fat = filesystem_fat_create();
+    assert(fat != NULL);
+    setup(sd);
+
+    test_api_format_error(fat, sd);
+    test_api_mount_error(fat, sd);
+
+    filesystem_fat_free(fat);
+    blockdevice_sd_free(sd);
 }

@@ -4,14 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "blockdevice/heap.h"
+#include "blockdevice/flash.h"
+#include "blockdevice/sd.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/fat.h"
 #include "filesystem/vfs.h"
 
 
 #define COLOR_GREEN(format)  ("\e[32m" format "\e[0m")
-#define HEAP_STORAGE_SIZE    (64 * 1024)
 
 struct combination_map {
     blockdevice_t *device1;
@@ -20,30 +20,46 @@ struct combination_map {
     filesystem_t *filesystem2;
 };
 
-#define NUM_COMBINATION    3
+#define NUM_COMBINATION    6
 static struct combination_map combination[NUM_COMBINATION];
 
 
 static void init_filesystem_combination(void) {
-    blockdevice_t *heap1 = blockdevice_heap_create(HEAP_STORAGE_SIZE);
-    blockdevice_t *heap2 = blockdevice_heap_create(HEAP_STORAGE_SIZE);
+    blockdevice_t *flash1 = blockdevice_flash_create(1 * 1024 * 1024, 512 * 1024);
+    blockdevice_t *flash2 = blockdevice_flash_create(1 * 1024 * 1024 + 512 * 1024, 0);
+    blockdevice_t *sd = blockdevice_sd_create(spi0,
+                                              PICO_DEFAULT_SPI_TX_PIN,
+                                              PICO_DEFAULT_SPI_RX_PIN,
+                                              PICO_DEFAULT_SPI_SCK_PIN,
+                                              PICO_DEFAULT_SPI_CSN_PIN,
+                                              24 * MHZ,
+                                              true);
     filesystem_t *fat1 = filesystem_fat_create();
     filesystem_t *fat2 = filesystem_fat_create();
     filesystem_t *littlefs1 = filesystem_littlefs_create(500, 16);
     filesystem_t *littlefs2 = filesystem_littlefs_create(500, 16);
 
     combination[0] = (struct combination_map){
-        .device1 = heap1, .filesystem1 = fat1, .device2 = heap2, .filesystem2 = fat2,
+        .device1 = flash1, .filesystem1 = fat1, .device2 = flash2, .filesystem2 = fat2,
     };
     combination[1] = (struct combination_map){
-        .device1 = heap1, .filesystem1 = fat1, .device2 = heap2, .filesystem2 = littlefs2,
+        .device1 = flash1, .filesystem1 = fat1, .device2 = flash2, .filesystem2 = littlefs2,
     };
     combination[2] = (struct combination_map){
-        .device1 = heap1, .filesystem1 = littlefs1, .device2 = heap2, .filesystem2 = littlefs2,
+        .device1 = flash1, .filesystem1 = littlefs1, .device2 = flash2, .filesystem2 = littlefs2,
+    };
+    combination[3] = (struct combination_map){
+        .device1 = flash1, .filesystem1 = fat1, .device2 = sd, .filesystem2 = fat2,
+    };
+    combination[4] = (struct combination_map){
+        .device1 = flash1, .filesystem1 = fat1, .device2 = sd, .filesystem2 = littlefs2,
+    };
+    combination[5] = (struct combination_map){
+        .device1 = flash1, .filesystem1 = littlefs1, .device2 = sd, .filesystem2 = littlefs2,
     };
 }
 
-#define TEST_FILE_SIZE  16 * 1024;
+#define TEST_FILE_SIZE  100 * 1024;
 
 static void test_printf(const char *format, ...) {
     va_list args;
@@ -61,7 +77,7 @@ static void test_write(const char *path) {
     int fd = open(path, O_WRONLY|O_CREAT);
     assert(fd >= 0);
 
-    uint8_t buffer[512] = {0};
+    uint8_t buffer[1024*64] = {0};
     size_t remind = TEST_FILE_SIZE;
     while (remind > 0) {
         size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
@@ -83,7 +99,7 @@ static void test_copy(const char *source, const char *dist) {
     assert(fd_dist >= 0);
     assert(fd_src != fd_dist);
 
-    uint8_t buffer[512] = {0};
+    uint8_t buffer[1024*64] = {0};
     while (true) {
         ssize_t read_size = read(fd_src, buffer, sizeof(buffer));
         if (read_size == 0)
@@ -103,7 +119,7 @@ static void test_read(const char *path) {
     int fd = open(path, O_RDONLY);
     assert(fd >= 0);
 
-    uint8_t buffer[512] = {0};
+    uint8_t buffer[1024*64] = {0};
     while (true) {
         ssize_t read_size = read(fd, buffer, sizeof(buffer));
         if (read_size == 0)

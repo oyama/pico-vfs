@@ -3,13 +3,17 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include "blockdevice/flash.h"
 #include "blockdevice/heap.h"
 #include "blockdevice/loopback.h"
+#include "blockdevice/sd.h"
 #include "filesystem/fat.h"
 #include "filesystem/vfs.h"
 
 #define COLOR_GREEN(format)  ("\e[32m" format "\e[0m")
-#define HEAP_STORAGE_SIZE    (64 * 1024)
+#define FLASH_START_AT       (0.5 * 1024 * 1024)
+#define FLASH_LENGTH_ALL     0
+#define HEAP_STORAGE_SIZE    (512 * 128)   // 64KB
 #define LOOPBACK_STORAGE_SIZE  1024
 #define LOOPBACK_BLOCK_SIZE    512
 
@@ -53,6 +57,20 @@ static void setup(blockdevice_t *device) {
 static void cleanup(blockdevice_t *device) {
     size_t length = device->size(device);
     device->erase(device, 0, length);
+}
+
+static bool is_sd_card_connected(blockdevice_t *device) {
+    int err = device->deinit(device);
+    assert(err == BD_ERROR_OK);
+
+    err = device->init(device);
+    if (err == BD_ERROR_OK)
+        return true;
+    else if (err == -5005)
+        return false;
+    else
+        assert(err == BD_ERROR_OK);
+    return false;
 }
 
 static void test_api_init(blockdevice_t *device) {
@@ -140,6 +158,47 @@ static void test_api_attribute(blockdevice_t *device) {
 }
 
 void test_blockdevice(void) {
+    printf("Block device Onboard-Flash:\n");
+    blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+    assert(flash != NULL);
+    setup(flash);
+
+    test_api_init(flash);
+    test_api_erase_program_read(flash);
+    test_api_trim(flash);
+    test_api_sync(flash);
+    test_api_size(flash);
+    test_api_attribute(flash);
+
+    cleanup(flash);
+    blockdevice_flash_free(flash);
+
+    printf("Block device SPI SD card:\n");
+    blockdevice_t *sd = blockdevice_sd_create(spi0,
+                                              PICO_DEFAULT_SPI_TX_PIN,
+                                              PICO_DEFAULT_SPI_RX_PIN,
+                                              PICO_DEFAULT_SPI_SCK_PIN,
+                                              PICO_DEFAULT_SPI_CSN_PIN,
+                                              10 * MHZ,
+                                              false);
+    assert(sd != NULL);
+    if (is_sd_card_connected(sd)) {
+        setup(sd);
+
+        test_api_init(sd);
+        test_api_erase_program_read(sd);
+        test_api_trim(sd);
+        test_api_sync(sd);
+        test_api_size(sd);
+        test_api_attribute(sd);
+
+        cleanup(sd);
+    } else {
+        test_printf("init");
+        printf("skip, device not connected\n");
+    }
+    blockdevice_sd_free(sd);
+
     printf("Block device Heap memory:\n");
     blockdevice_t *heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
     assert(heap != NULL);
