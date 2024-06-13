@@ -2,12 +2,13 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include "blockdevice/heap.h"
+#include "blockdevice/flash.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 
 #define COLOR_GREEN(format)      ("\e[32m" format "\e[0m")
-#define HEAP_STORAGE_SIZE        (128 * 1024)
+#define FLASH_START_AT           (0.5 * 1024 * 1024)
+#define FLASH_LENGTH_ALL         0
 #define LITTLEFS_BLOCK_CYCLE     500
 #define LITTLEFS_LOOKAHEAD_SIZE  16
 
@@ -358,15 +359,15 @@ static void test_api_stat(filesystem_t *fs) {
 void test_filesystem(void) {
     printf("File system FAT:\n");
 
-    blockdevice_t *heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
+    blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
 
-    assert(heap != NULL);
+    assert(flash != NULL);
     filesystem_t *fat = filesystem_fat_create();
     assert(fat != NULL);
-    setup(heap);
+    setup(flash);
 
-    test_api_format(fat, heap);
-    test_api_mount(fat, heap);
+    test_api_format(fat, flash);
+    test_api_mount(fat, flash);
     test_api_file_open_close(fat);
     test_api_file_write_read(fat);
     test_api_file_seek(fat);
@@ -380,21 +381,21 @@ void test_filesystem(void) {
     test_api_stat(fat);
 
     test_api_unmount(fat);
-    cleanup(heap);
+    cleanup(flash);
+    blockdevice_flash_free(flash);
     filesystem_fat_free(fat);
-    blockdevice_heap_free(heap);
 
 
     printf("File system littlefs:\n");
-    heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
-    assert(heap != NULL);
+    flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+    assert(flash != NULL);
     filesystem_t *lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
                                                    LITTLEFS_LOOKAHEAD_SIZE);
     assert(lfs != NULL);
-    setup(heap);
+    setup(flash);
 
-    test_api_format(lfs, heap);
-    test_api_mount(lfs, heap);
+    test_api_format(lfs, flash);
+    test_api_mount(lfs, flash);
     test_api_file_open_close(lfs);
     test_api_file_write_read(lfs);
     test_api_file_seek(lfs);
@@ -409,7 +410,7 @@ void test_filesystem(void) {
 
     test_api_unmount(lfs);
 
-    cleanup(heap);
+    cleanup(flash);
+    blockdevice_flash_free(flash);
     filesystem_littlefs_free(lfs);
-    blockdevice_heap_free(heap);
 }
