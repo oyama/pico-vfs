@@ -8,23 +8,26 @@
 #include <pico/stdlib.h>
 #include <stdio.h>
 
-#define MQTT_SERVER     "io.adafruit.com"  // https://io.adafruit.com
+#define MQTT_SERVER             "io.adafruit.com"  // See https://io.adafruit.com
+#define MQTT_TOPIC              (MQTT_USER "/feeds/temperature")
+#define MQTT_QOS_AT_LEAST_ONCE  1
+#define LOCAL_QUEUE_PATH        "/temperature.txt"
 
 extern bool ntp_sync(void);
 extern const char *get_timestamp(void);
 
 static bool network_init(ip_addr_t *mqtt_server) {
     if (cyw43_arch_init()) {
-        printf("WiFi init failed");
+        printf("Wi-Fi init failed");
         return false;
     }
     cyw43_arch_enable_sta_mode();
 
     while (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000) != 0) {
-        printf("WiFi connection failed\n");
+        printf("Wi-Fi connection failed\n");
         sleep_ms(1000);
     }
-    printf("WiFi connect ok\n");
+    printf("Wi-Fi connect ok\n");
 
     while (!ntp_sync()) {
         printf("NTP sync failed\n");
@@ -41,10 +44,10 @@ static bool network_init(ip_addr_t *mqtt_server) {
                 sleep_ms(1);
             break;
         }
-        printf("dns_gethostbyname(\"%s\") failed=%d\n", MQTT_SERVER, err);
+        printf("lookup %s failed=%d\n", MQTT_SERVER, err);
         sleep_ms(1000);
     }
-    printf("%s ok\n", MQTT_SERVER);
+    printf("lookup %s ok\n", MQTT_SERVER);
     return true;
 }
 
@@ -68,7 +71,7 @@ static bool mantain_network_connection(mqtt_client_t *client, ip_addr_t *server)
         cyw43_arch_lwip_end();
 
         if (err != 0) {
-            printf("WiFi connection failed: err=%d\n", err);
+            printf("Wi-Fi connection failed: err=%d\n", err);
             return false;
         }
         printf("Wi-Fi connect ok\n");
@@ -103,31 +106,20 @@ static float read_sensor_data() {
     return temperature;
 }
 
-static void send_mqtt_message(mqtt_client_t *client, float data, const char* timestamp) {
+static void publish_message(mqtt_client_t *client, float data, const char *timestamp) {
     (void)client;
     char payload[100] = {0};
     snprintf(payload, sizeof(payload), "{\"timestamp\":\"%s\", \"value\":%.2f}", timestamp, data);
 
     cyw43_arch_lwip_begin();
-    mqtt_publish(client, MQTT_USER "/feeds/temperature", payload, strlen(payload), 1, 0, NULL, NULL);
+    mqtt_publish(client, MQTT_TOPIC, payload, strlen(payload), MQTT_QOS_AT_LEAST_ONCE, 0, NULL, NULL);
     cyw43_arch_lwip_end();
 
-    printf("MQTT publish: %s\n", payload);
+    printf("Publish: %s\n", payload);
 }
 
-static void save_data_to_file(float data, const char* timestamp) {
-    FILE *fp = fopen("/temperature.txt", "a");
-    if (fp == NULL) {
-        printf("fopen failed: %s\n", strerror(errno));
-        return;
-    }
-    fprintf(fp, "%s,%.2f\n", timestamp, data);
-    printf("Queue data: %s,%.2f\n", timestamp, data);
-    fclose(fp);
-}
-
-static void send_data_from_file(mqtt_client_t *client) {
-    FILE *fp = fopen("/temperature.txt", "r");
+static void publish_message_from_file(mqtt_client_t *client) {
+    FILE *fp = fopen(LOCAL_QUEUE_PATH, "r");
     if (fp == NULL) {
         return;
     }
@@ -135,12 +127,22 @@ static void send_data_from_file(mqtt_client_t *client) {
     char timestamp[30] = {0};
     float data = 0;
     while (fscanf(fp, "%[^,],%f\n", timestamp, &data) != EOF) {
-        send_mqtt_message(client, data, timestamp);
+        publish_message(client, data, timestamp);
     }
     fclose(fp);
-    remove("/temperature.txt");
+    remove(LOCAL_QUEUE_PATH);
 }
 
+static void save_data_to_file(float data, const char *timestamp) {
+    FILE *fp = fopen(LOCAL_QUEUE_PATH, "a");
+    if (fp == NULL) {
+        printf("fopen failed: %s\n", strerror(errno));
+        return;
+    }
+    fprintf(fp, "%s,%.2f\n", timestamp, data);
+    printf("Queue: %s,%.2f\n", timestamp, data);
+    fclose(fp);
+}
 
 int main(void) {
     stdio_init_all();
@@ -159,8 +161,8 @@ int main(void) {
         const char *timestamp = get_timestamp();
         if (mantain_network_connection(client, &mqtt_server_addr)) {
             // Normal operation
-            send_data_from_file(client);
-            send_mqtt_message(client, sensor_value, timestamp);
+            publish_message_from_file(client);
+            publish_message(client, sensor_value, timestamp);
         } else {
             // Network outage operation
             save_data_to_file(sensor_value, timestamp);
