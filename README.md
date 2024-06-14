@@ -9,6 +9,16 @@ Designed specifically for the Raspberry Pi Pico, `pico-vfs` is a virtual file sy
 - **Pre-configured File System**: To reduce the time and complexity of initial setup, default file system configurations are included. Additionally, an `AUTO_INIT` feature is available to automatically initialize the file system before the execution of `main()`.
 - **Modular Design**: pico-vfs adopts a multi-layer architecture, allowing components such as the block device abstraction layer and the file system abstraction layer to be freely exchanged and added.
 
+## Examples of Use Cases
+
+pico-vfs unlocks various applications for the Raspberry Pi Pico. Here's how it can be used:
+
+- **Basic File Usage in Embedded Environments**: Manage configuration settings and record debug information using familiar POSIX-compliant file APIs.
+- **Elastic MQTT Client**: Implements an MQTT client with a local queue to handle network disconnections seamlessly. [View Sample Code](EXAMPLE.md)
+- **Complex UNIX Application Porting**: Port SQLite3 to the Pico using pico-vfs, enabling complex data management tasks on the device. [Visit pico-sqlite Project Repository]()https://github.com/oyama/pico-sqlite
+
+These are just a few examples. Utilize the flexibility and capabilities of pico-vfs to develop custom solutions tailored to your projects.
+
 ## Modular Design Architecture
 
 ```
