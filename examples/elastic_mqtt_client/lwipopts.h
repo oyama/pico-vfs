@@ -7,6 +7,9 @@ void set_system_time(uint32_t sec);
 #define MEMP_NUM_SYS_TIMEOUT        LWIP_NUM_SYS_TIMEOUT_INTERNAL + 8
 #define SNTP_SET_SYSTEM_TIME        set_system_time
 #define SNTP_SERVER_DNS             1
+#define LWIP_ALTCP                  1
+#define LWIP_ALTCP_TLS              1
+#define LWIP_ALTCP_TLS_MBEDTLS      1
 
 #define NO_SYS                      1
 #define LWIP_SOCKET                 0

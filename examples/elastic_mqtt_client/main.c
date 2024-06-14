@@ -1,14 +1,14 @@
-#include <lwip/dns.h>
 #include <errno.h>
 #include <hardware/adc.h>
 #include <hardware/rtc.h>
+#include <lwip/altcp_tls.h>
 #include <lwip/apps/mqtt.h>
+#include <lwip/dns.h>
 #include <pico/cyw43_arch.h>
 #include <pico/stdlib.h>
 #include <stdio.h>
-#include <time.h>
 
-#define MQTT_SERVER     "io.adafruit.com"  // This sample does not support TLS, so the port number is 1883
+#define MQTT_SERVER     "io.adafruit.com"
 
 extern bool ntp_sync(void);
 extern const char *get_timestamp(void);
@@ -90,9 +90,15 @@ static bool mantain_network_connection(mqtt_client_t *client, ip_addr_t *addr) {
         ci.client_user = MQTT_USER;
         ci.client_pass = MQTT_PASSWORD;
         ci.keep_alive = 30;
+        if (ci.tls_config == NULL)
+            ci.tls_config = altcp_tls_create_config_client(NULL, 0);
+        if (ci.tls_config == NULL) {
+            printf("mantain_network_connection: altcp_tls_create_config_client failed\n");
+            return false;
+        }
 
         cyw43_arch_lwip_begin();
-        mqtt_client_connect(client, addr, MQTT_PORT, mqtt_connection_cb, 0, &ci);
+        mqtt_client_connect(client, addr, MQTT_TLS_PORT, mqtt_connection_cb, 0, &ci);
         cyw43_arch_lwip_end();
         return true;
     }
@@ -129,11 +135,15 @@ int main(void) {
         cyw43_arch_lwip_begin();
         int err = dns_gethostbyname(MQTT_SERVER, &mqtt_server_ip, NULL, NULL);
         cyw43_arch_lwip_end();
-        if (err == ERR_OK)
+        if (err == ERR_OK) {
+            while (mqtt_server_ip.addr == 0)
+                sleep_ms(1);
             break;
+        }
         printf("dns_gethostbyname(%s) failed=%d\n", MQTT_SERVER, err);
         sleep_ms(1000);
     }
+    printf("%s ok\n", MQTT_SERVER);
 
     while (1) {
         float sensor_value = read_sensor_data();
