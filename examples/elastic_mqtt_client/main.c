@@ -8,27 +8,99 @@
 #include <pico/stdlib.h>
 #include <stdio.h>
 
-#define MQTT_SERVER     "io.adafruit.com"
+#define MQTT_SERVER     "io.adafruit.com"  // https://io.adafruit.com
 
 extern bool ntp_sync(void);
 extern const char *get_timestamp(void);
 
-static float read_sensor_data() {
-    uint16_t raw = adc_read();
-    const float conversion_factor = 3.3f / (1 << 12);
-    float voltage = raw * conversion_factor;
-    float temperature = 27.0f - (voltage - 0.706f) / 0.001721f;
-    return temperature;
+static bool network_init(ip_addr_t *mqtt_server) {
+    if (cyw43_arch_init()) {
+        printf("WiFi init failed");
+        return false;
+    }
+    cyw43_arch_enable_sta_mode();
+
+    while (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000) != 0) {
+        printf("WiFi connection failed\n");
+        sleep_ms(1000);
+    }
+    printf("WiFi connect ok\n");
+
+    while (!ntp_sync()) {
+        printf("NTP sync failed\n");
+        sleep_ms(1000);
+    }
+    printf("NTP sync ok\n");
+
+    while (1) {
+        cyw43_arch_lwip_begin();
+        int err = dns_gethostbyname(MQTT_SERVER, mqtt_server, NULL, NULL);
+        cyw43_arch_lwip_end();
+        if (err == ERR_OK) {
+            while (mqtt_server->addr == 0)
+                sleep_ms(1);
+            break;
+        }
+        printf("dns_gethostbyname(\"%s\") failed=%d\n", MQTT_SERVER, err);
+        sleep_ms(1000);
+    }
+    printf("%s ok\n", MQTT_SERVER);
+    return true;
 }
 
 static void mqtt_connection_cb(mqtt_client_t *client, void *arg, mqtt_connection_status_t status) {
     (void)client;
     (void)arg;
     if (status == MQTT_CONNECT_ACCEPTED) {
-        printf("MQTT connect OK\n");
+        printf("MQTT connect ok\n");
     } else {
         printf("MQTT connect failed: status=%d\n", status);
     }
+}
+
+static bool mantain_network_connection(mqtt_client_t *client, ip_addr_t *server) {
+    bool wifi_status = netif_is_up(&cyw43_state.netif[0]) && netif_is_link_up(&cyw43_state.netif[0]);
+    if (!wifi_status) {
+
+        cyw43_arch_lwip_begin();
+        cyw43_wifi_leave(&cyw43_state, CYW43_ITF_STA);
+        int err = cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 1000);
+        cyw43_arch_lwip_end();
+
+        if (err != 0) {
+            printf("WiFi connection failed: err=%d\n", err);
+            return false;
+        }
+        printf("Wi-Fi connect ok\n");
+    }
+    if (!mqtt_client_is_connected(client)) {
+        static struct mqtt_connect_client_info_t ci = {0};
+        ci.client_id = "";
+        ci.client_user = MQTT_USER;
+        ci.client_pass = MQTT_PASSWORD;
+        ci.keep_alive = 30;
+        if (ci.tls_config == NULL)
+            ci.tls_config = altcp_tls_create_config_client(NULL, 0);
+        if (ci.tls_config == NULL) {
+            printf("mantain_network_connection: altcp_tls_create_config_client failed\n");
+            return false;
+        }
+
+        cyw43_arch_lwip_begin();
+        mqtt_client_connect(client, server, MQTT_TLS_PORT, mqtt_connection_cb, 0, &ci);
+        cyw43_arch_lwip_end();
+        return true;
+    }
+    return true;
+}
+
+// Report on-board thermometer data
+static float read_sensor_data() {
+    uint16_t raw = adc_read();
+    const float conversion_factor = 3.3f / (1 << 12);
+    float voltage = raw * conversion_factor;
+    float temperature = 27.0f - (voltage - 0.706f) / 0.001721f;
+    return temperature;
 }
 
 static void send_mqtt_message(mqtt_client_t *client, float data, const char* timestamp) {
@@ -69,41 +141,6 @@ static void send_data_from_file(mqtt_client_t *client) {
     remove("/temperature.txt");
 }
 
-static bool mantain_network_connection(mqtt_client_t *client, ip_addr_t *addr) {
-    bool wifi_status = netif_is_up(&cyw43_state.netif[0]) && netif_is_link_up(&cyw43_state.netif[0]);
-    if (!wifi_status) {
-
-        cyw43_arch_lwip_begin();
-        cyw43_wifi_leave(&cyw43_state, CYW43_ITF_STA);
-        int err = cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 1000);
-        cyw43_arch_lwip_end();
-
-        if (err != 0) {
-            printf("WiFi connection failed: err=%d\n", err);
-            return false;
-        }
-        printf("Wi-Fi connect ok\n");
-    }
-    if (!mqtt_client_is_connected(client)) {
-        static struct mqtt_connect_client_info_t ci = {0};
-        ci.client_id = "";
-        ci.client_user = MQTT_USER;
-        ci.client_pass = MQTT_PASSWORD;
-        ci.keep_alive = 30;
-        if (ci.tls_config == NULL)
-            ci.tls_config = altcp_tls_create_config_client(NULL, 0);
-        if (ci.tls_config == NULL) {
-            printf("mantain_network_connection: altcp_tls_create_config_client failed\n");
-            return false;
-        }
-
-        cyw43_arch_lwip_begin();
-        mqtt_client_connect(client, addr, MQTT_TLS_PORT, mqtt_connection_cb, 0, &ci);
-        cyw43_arch_lwip_end();
-        return true;
-    }
-    return true;
-}
 
 int main(void) {
     stdio_init_all();
@@ -112,46 +149,20 @@ int main(void) {
     adc_set_temp_sensor_enabled(true);
     adc_select_input(4);
 
-    if (cyw43_arch_init()) {
-        printf("WiFi init failed");
-        return -1;
+    ip_addr_t mqtt_server_addr = {0};
+    if (!network_init(&mqtt_server_addr)) {
+        printf("network_init failed\n");
     }
-    cyw43_arch_enable_sta_mode();
-    while (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000) != 0) {
-        printf("WiFi connection failed\n");
-        sleep_ms(1000);
-    }
-    printf("WiFi connect ok\n");
-
-    while (!ntp_sync()) {
-        printf("NTP sync failed\n");
-        sleep_ms(1000);
-    }
-    printf("NTP sync ok\n");
-
     mqtt_client_t *client = mqtt_client_new();
-    ip_addr_t mqtt_server_ip;
-    while (1) {
-        cyw43_arch_lwip_begin();
-        int err = dns_gethostbyname(MQTT_SERVER, &mqtt_server_ip, NULL, NULL);
-        cyw43_arch_lwip_end();
-        if (err == ERR_OK) {
-            while (mqtt_server_ip.addr == 0)
-                sleep_ms(1);
-            break;
-        }
-        printf("dns_gethostbyname(%s) failed=%d\n", MQTT_SERVER, err);
-        sleep_ms(1000);
-    }
-    printf("%s ok\n", MQTT_SERVER);
-
     while (1) {
         float sensor_value = read_sensor_data();
         const char *timestamp = get_timestamp();
-        if (mantain_network_connection(client, &mqtt_server_ip)) {
-            send_mqtt_message(client, sensor_value, timestamp);
+        if (mantain_network_connection(client, &mqtt_server_addr)) {
+            // Normal operation
             send_data_from_file(client);
+            send_mqtt_message(client, sensor_value, timestamp);
         } else {
+            // Network outage operation
             save_data_to_file(sensor_value, timestamp);
         }
         sleep_ms(10 * 1000);
