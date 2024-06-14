@@ -15,7 +15,7 @@ pico-vfs unlocks various applications for the Raspberry Pi Pico. Here's how it c
 
 - **Basic File Usage in Embedded Environments**: Manage configuration settings and record debug information using familiar POSIX-compliant file APIs.
 - **Elastic MQTT Client**: Implements an MQTT client with a local queue to handle network disconnections seamlessly. [View Sample Code](EXAMPLE.md)
-- **Complex UNIX Application Porting**: Port SQLite3 to the Pico using pico-vfs, enabling complex data management tasks on the device. [Visit pico-sqlite Project Repository]()https://github.com/oyama/pico-sqlite
+- **Complex UNIX Application Porting**: Port SQLite3 to the Pico using pico-vfs, enabling complex data management tasks on the device. [Visit pico-sqlite Project](https://github.com/oyama/pico-sqlite)
 
 These are just a few examples. Utilize the flexibility and capabilities of pico-vfs to develop custom solutions tailored to your projects.
 
