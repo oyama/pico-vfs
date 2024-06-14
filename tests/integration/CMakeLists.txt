@@ -5,7 +5,7 @@ add_executable(integration
   test_blockdevice.c
   test_filesystem.c
   test_vfs.c
-  test_stdio.c
+  test_standard.c
   test_copy_between_different_filesystems.c
 )
 target_compile_options(integration PRIVATE -Werror -Wall -Wextra -Wnull-dereference)

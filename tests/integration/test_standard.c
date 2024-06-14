@@ -4,13 +4,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <wchar.h>
-#include "blockdevice/heap.h"
+#include "blockdevice/flash.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/vfs.h"
 
 #define COLOR_GREEN(format)      ("\e[32m" format "\e[0m")
-#define HEAP_STORAGE_SIZE        (128 * 1024)
+#define FLASH_START_AT           (0.5 * 1024 * 1024)
+#define FLASH_LENGTH_ALL         0
 #define LITTLEFS_BLOCK_CYCLE     500
 #define LITTLEFS_LOOKAHEAD_SIZE  16
 
@@ -976,32 +977,31 @@ void test_standard_file_api(void) {
     test_vfwscanf();
 }
 
-
-void test_stdio(void) {
+void test_standard(void) {
     printf("POSIX and C standard file API(littlefs):\n");
 
-    blockdevice_t *heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
+    blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
     filesystem_t *lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
                                                    LITTLEFS_LOOKAHEAD_SIZE);
 
-    setup(lfs, heap);
+    setup(lfs, flash);
 
     test_standard_file_api();
 
-    cleanup(lfs, heap);
+    cleanup(lfs, flash);
     filesystem_littlefs_free(lfs);
-    blockdevice_heap_free(heap);
+    blockdevice_flash_free(flash);
 
 
     printf("POSIX and C standard file API(FAT):\n");
 
-    heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
+    flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
     filesystem_t *fat = filesystem_fat_create();
-    setup(fat, heap);
+    setup(fat, flash);
 
     test_standard_file_api();
 
-    cleanup(fat, heap);
+    cleanup(fat, flash);
     filesystem_fat_free(fat);
-    blockdevice_heap_free(heap);
+    blockdevice_flash_free(flash);
 }

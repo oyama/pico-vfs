@@ -4,14 +4,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <wchar.h>
-#include "blockdevice/flash.h"
+#include "blockdevice/heap.h"
 #include "filesystem/fat.h"
 #include "filesystem/littlefs.h"
 #include "filesystem/vfs.h"
 
 #define COLOR_GREEN(format)      ("\e[32m" format "\e[0m")
-#define FLASH_START_AT           (0.5 * 1024 * 1024)
-#define FLASH_LENGTH_ALL         0
+#define HEAP_STORAGE_SIZE        (128 * 1024)
 #define LITTLEFS_BLOCK_CYCLE     500
 #define LITTLEFS_LOOKAHEAD_SIZE  16
 
@@ -260,7 +259,6 @@ static void test_fopen(void) {
     int err = fclose(fp);
     assert(err == 0);
 
-
     fp = fopen("/fopen", "r");
     assert(fp != NULL);
     char buffer[512];
@@ -275,6 +273,20 @@ static void test_fopen(void) {
     line = fgets(buffer, sizeof(buffer), fp);
     assert(line == NULL);
 
+    err = fclose(fp);
+    assert(err == 0);
+
+    fp = fopen("/fopen", "a+");
+    assert(fp != NULL);
+    assert(ftell(fp) > 0);
+    fprintf(fp, "APPEND\n");
+    fseek(fp, 0, SEEK_SET);
+    fgets(buffer, sizeof(buffer), fp);
+    assert(strcmp(buffer, "0123456789\n") == 0);
+    fgets(buffer, sizeof(buffer), fp);
+    assert(strcmp(buffer, "ABCDEF\n") == 0);
+    fgets(buffer, sizeof(buffer), fp);
+    assert(strcmp(buffer, "APPEND\n") == 0);
     err = fclose(fp);
     assert(err == 0);
 
@@ -977,32 +989,31 @@ void test_standard_file_api(void) {
     test_vfwscanf();
 }
 
-
-void test_stdio(void) {
+void test_standard(void) {
     printf("POSIX and C standard file API(littlefs):\n");
 
-    blockdevice_t *flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+    blockdevice_t *heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
     filesystem_t *lfs = filesystem_littlefs_create(LITTLEFS_BLOCK_CYCLE,
                                                    LITTLEFS_LOOKAHEAD_SIZE);
 
-    setup(lfs, flash);
+    setup(lfs, heap);
 
     test_standard_file_api();
 
-    cleanup(lfs, flash);
+    cleanup(lfs, heap);
     filesystem_littlefs_free(lfs);
-    blockdevice_flash_free(flash);
+    blockdevice_heap_free(heap);
 
 
     printf("POSIX and C standard file API(FAT):\n");
 
-    flash = blockdevice_flash_create(FLASH_START_AT, FLASH_LENGTH_ALL);
+    heap = blockdevice_heap_create(HEAP_STORAGE_SIZE);
     filesystem_t *fat = filesystem_fat_create();
-    setup(fat, flash);
+    setup(fat, heap);
 
     test_standard_file_api();
 
-    cleanup(fat, flash);
+    cleanup(fat, heap);
     filesystem_fat_free(fat);
-    blockdevice_flash_free(flash);
+    blockdevice_heap_free(heap);
 }
