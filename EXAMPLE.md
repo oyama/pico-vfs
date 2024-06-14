@@ -2,10 +2,11 @@
 
 | App             | Description                                                             |
 |-----------------|-------------------------------------------------------------------------|
-| [hello](hello)  | Hello filesystem world.                                                 |
-| [fs\_inits](fs_inits) | Examples of file system layout combinations.                      |
-| [benchmark](benchmark)| Data transfer tests with different block devices and different file system combinations.|
-| [usb\_msc\_logger](usb_msc_logger) | Data logger that mounts littlefs and FAT on flash memory and shares it with a PC via USB mass storage class.|
+| [hello](examples/hello)  | Hello filesystem world.                                                 |
+| [fs\_inits](examples/fs_inits) | Examples of file system layout combinations.                      |
+| [usb\_msc\_logger](examples/usb_msc_logger) | Data logger that mounts littlefs and FAT on flash memory and shares it with a PC via USB mass storage class.|
+| [elastic\_mqtt\_client](examples/elastic_mqtt_client) |Implements an MQTT client with a local queue to handle network disconnections seamlessly. |
+| [benchmark](examples/benchmark)| Data transfer tests with different block devices and different file system combinations.|
 
 ## Building sample code
 
@@ -16,7 +17,14 @@ Firmware can be built from the _CMake_ build directory of _pico-vfs_.
 ```bash
 mkdir build; cd build/
 PICO_SDK_PATH=/path/to/pico-sdk cmake ..
-make hello fs_init_example benchmark logger
+make hello fs_init_example logger benchmark
+```
+
+`PICO_BOARD=pico_w` must be specified for `elastic_mqtt_client` as it uses Wi-Fi. In addition, the Wi-Fi settings and the MQTT server to connect to must be changed in the source code.
+
+```bash
+PICO_SDK_PATH=/path/to/pico-sdk cmake .. -DPICO_BOARD=pico_w
+make elastic_mqtt_client
 ```
 
 ### Circuit Diagram
