@@ -8,11 +8,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define WIFI_SSID       "WIFI-SSID"
-#define WIFI_PASSWORD   "WIFI-PASSWORD"
 #define MQTT_SERVER     "io.adafruit.com"  // This sample does not support TLS, so the port number is 1883
-#define MQTT_USERNAME   "MQTT_USERNAME"
-#define MQTT_PASSWORD   "MQTT_PASSWORD"
 
 extern bool ntp_sync(void);
 extern const char *get_timestamp(void);
@@ -39,7 +35,11 @@ static void send_mqtt_message(mqtt_client_t *client, float data, const char* tim
     (void)client;
     char payload[100] = {0};
     snprintf(payload, sizeof(payload), "{\"timestamp\":\"%s\", \"value\":%.2f}", timestamp, data);
-    mqtt_publish(client, MQTT_USERNAME "/feeds/temperature", payload, strlen(payload), 1, 0, NULL, NULL);
+
+    cyw43_arch_lwip_begin();
+    mqtt_publish(client, MQTT_USER "/feeds/temperature", payload, strlen(payload), 1, 0, NULL, NULL);
+    cyw43_arch_lwip_end();
+
     printf("MQTT publish: %s\n", payload);
 }
 
@@ -72,8 +72,12 @@ static void send_data_from_file(mqtt_client_t *client) {
 static bool mantain_network_connection(mqtt_client_t *client, ip_addr_t *addr) {
     bool wifi_status = netif_is_up(&cyw43_state.netif[0]) && netif_is_link_up(&cyw43_state.netif[0]);
     if (!wifi_status) {
+
+        cyw43_arch_lwip_begin();
         cyw43_wifi_leave(&cyw43_state, CYW43_ITF_STA);
         int err = cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 1000);
+        cyw43_arch_lwip_end();
+
         if (err != 0) {
             printf("WiFi connection failed: err=%d\n", err);
             return false;
@@ -83,10 +87,13 @@ static bool mantain_network_connection(mqtt_client_t *client, ip_addr_t *addr) {
     if (!mqtt_client_is_connected(client)) {
         static struct mqtt_connect_client_info_t ci = {0};
         ci.client_id = "";
-        ci.client_user = MQTT_USERNAME;
+        ci.client_user = MQTT_USER;
         ci.client_pass = MQTT_PASSWORD;
         ci.keep_alive = 30;
+
+        cyw43_arch_lwip_begin();
         mqtt_client_connect(client, addr, MQTT_PORT, mqtt_connection_cb, 0, &ci);
+        cyw43_arch_lwip_end();
         return true;
     }
     return true;
@@ -118,8 +125,12 @@ int main(void) {
 
     mqtt_client_t *client = mqtt_client_new();
     ip_addr_t mqtt_server_ip;
-    int err = 0;
-    while ((err = dns_gethostbyname(MQTT_SERVER, &mqtt_server_ip, NULL, NULL)) != ERR_OK) {
+    while (1) {
+        cyw43_arch_lwip_begin();
+        int err = dns_gethostbyname(MQTT_SERVER, &mqtt_server_ip, NULL, NULL);
+        cyw43_arch_lwip_end();
+        if (err == ERR_OK)
+            break;
         printf("dns_gethostbyname(%s) failed=%d\n", MQTT_SERVER, err);
         sleep_ms(1000);
     }

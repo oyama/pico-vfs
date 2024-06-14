@@ -2,6 +2,12 @@ add_executable(elastic_mqtt_client
   main.c
   ntp_sync.c
 )
+target_compile_definitions(elastic_mqtt_client PRIVATE
+  WIFI_SSID=\"${WIFI_SSID}\"
+  WIFI_PASSWORD=\"${WIFI_PASSWORD}\"
+  MQTT_USER=\"${MQTT_USER}\"
+  MQTT_PASSWORD=\"${MQTT_PASSWORD}\"
+)
 target_include_directories(elastic_mqtt_client PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}
   ${PICO_LWIP_PATH}/src/include

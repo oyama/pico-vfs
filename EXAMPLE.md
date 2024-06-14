@@ -20,10 +20,10 @@ PICO_SDK_PATH=/path/to/pico-sdk cmake ..
 make hello fs_init_example logger benchmark
 ```
 
-`PICO_BOARD=pico_w` must be specified for `elastic_mqtt_client` as it uses Wi-Fi. In addition, the Wi-Fi settings and the MQTT server to connect to must be changed in the source code.
+The `elastic_mqtt_client` uses Wi-Fi, so `PICO_BOARD=pico_w` needs to be specified. Furthermore, `WIFI_SSID`, `WIFI_PASSWORD`, `MQTT_USER` and `MQTT_PASSWORD` must be specified in the environment variables when running cmake. This example uses [Adafruit IO](https://io.adafruit.com/)'s MQTT server.
 
 ```bash
-PICO_SDK_PATH=/path/to/pico-sdk cmake .. -DPICO_BOARD=pico_w
+PICO_SDK_PATH=/path/to/pico-sdk WIFI_SSID=SSID WIFI_PASSWORD=PASSWORD MQTT_USER=USER MQTT_PASSWORD=PASSWORD cmake .. -DPICO_BOARD=pico_w
 make elastic_mqtt_client
 ```
 
