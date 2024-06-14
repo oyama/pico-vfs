@@ -194,6 +194,17 @@ static void test_api_file_seek() {
     int err = close(fd);
     assert(err == 0);
 
+    fd = open("/file", O_RDWR|O_APPEND);
+    char append_buffer[] = "APPEND";
+    memset(read_buffer, 0, sizeof(read_buffer));
+    write_length = write(fd, append_buffer, strlen(append_buffer));
+    assert((size_t)write_length == strlen(append_buffer));
+    lseek(fd, 0, SEEK_SET);
+    read_length = read(fd, read_buffer, sizeof(read_buffer));
+    assert(strcmp(read_buffer, "123456789ABCDEFAPPEND") == 0);
+    err = close(fd);
+    assert(err == 0);
+
     printf(COLOR_GREEN("ok\n"));
 }
 

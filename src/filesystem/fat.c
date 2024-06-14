@@ -412,13 +412,14 @@ static int file_open(filesystem_t *fs, fs_file_t *file, const char *path, int fl
         open_mode = FA_WRITE;
     else
         open_mode = FA_READ;
-
     if (flags & O_CREAT) {
         if (flags & O_TRUNC)
             open_mode |= FA_CREATE_ALWAYS;
         else
             open_mode |= FA_OPEN_ALWAYS;
     }
+    if (flags & O_APPEND)
+        open_mode |= FA_OPEN_APPEND;
 
     char fpath[PATH_MAX];
     filesystem_fat_context_t *context = fs->context;
