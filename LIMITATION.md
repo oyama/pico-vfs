@@ -8,6 +8,8 @@ When using pico-vfs, there are several limitations and behavior specifics that u
 
 2. **`core1` Usage with Onboard Flash Block Device**: When operating file systems using the onboard flash block device on `core1`, it is necessary to run the operations from RAM[^3].
 
+3. **Memory map IO**: `mmap` system call not supported.
+
 We recommend reviewing these limitations before designing systems that heavily rely on multicore operations or require high file access availability.
 
 ## References
