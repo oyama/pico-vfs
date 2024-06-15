@@ -162,7 +162,7 @@ int main(void) {
     stdio_init_all();
     init_filesystem_combination();
 
-    for (size_t i = 3; i < NUM_COMBINATION; i++) {
+    for (size_t i = 0; i < NUM_COMBINATION; i++) {
         struct combination_map setting = combination[i];
         printf("Test of %s on %s:\n", setting.filesystem->name, setting.device->name);
 
