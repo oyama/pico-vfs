@@ -2,6 +2,7 @@
  * Benchmark tests with different block devices and file systems
  *
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include <errno.h>

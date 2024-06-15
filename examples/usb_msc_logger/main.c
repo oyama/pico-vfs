@@ -1,6 +1,7 @@
 /* USB MSC Logger with two file systems
  *
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include <bsp/board.h>

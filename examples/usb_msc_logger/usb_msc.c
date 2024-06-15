@@ -1,9 +1,13 @@
+/*
+ * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 #include <string.h>
 #include <ctype.h>
 #include <bsp/board.h>
 #include <tusb.h>
 #include "blockdevice/flash.h"
-
 
 #define ANSI_CYAN     "\e[36m"
 #define ANSI_MAGENTA  "\e[35m"
@@ -118,7 +122,7 @@ int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset, uint8_t *
 int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, uint16_t bufsize) {
     (void)lun;
 
-    void const* response = NULL;
+    void const *response = NULL;
     int32_t resplen = 0;
     bool in_xfer = true;
 

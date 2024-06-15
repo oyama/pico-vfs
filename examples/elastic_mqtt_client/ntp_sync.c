@@ -1,3 +1,8 @@
+/*
+ * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 #include <hardware/rtc.h>
 #include <lwip/apps/sntp.h>
 #include <pico/cyw43_arch.h>
