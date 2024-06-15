@@ -4,6 +4,10 @@
  */
 #pragma once
 
+/** \defgroup blockdevice_sd blockdevice_sd
+ *  \ingroup blockdevice
+ *  \brief SPI-connected SD/MMC card block device
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,6 +21,7 @@ extern "C" {
 #define CONF_SD_TRX_FREQUENCY     (24 * MHZ)
 
 /*! \brief Create SD card block device with SPI
+ * \ingroup blockdevice_sd
  *
  * Create a block device object for an SPI-connected SD or MMC card.
  *
@@ -39,6 +44,7 @@ blockdevice_t *blockdevice_sd_create(spi_inst_t *spi_inst,
                                      bool enable_crc);
 
 /*! \brief Release the SD card device.
+ * \ingroup blockdevice_sd
  *
  * \param device Block device object.
  */

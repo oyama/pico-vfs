@@ -4,6 +4,10 @@
  */
 #pragma once
 
+/** \defgroup blockdevice_flash blockdevice_flash
+ *  \ingroup blockdevice
+ *  \brief Raspberry Pi Pico on-board flash memory block device
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,6 +16,7 @@ extern "C" {
 #include "blockdevice/blockdevice.h"
 
 /*! \brief Create Raspberry Pi Pico On-board Flash block device
+ * \ingroup blockdevice_flash
  *
  * Create a block device object that uses the Raspberry Pi Pico onboard flash memory. The start position of the flash memory to be allocated to the block device is specified by start and the length by length. start and length must be aligned to a flash sector of 4096 bytes.
  *
@@ -23,6 +28,7 @@ extern "C" {
 blockdevice_t *blockdevice_flash_create(uint32_t start, size_t length);
 
 /*! \brief Release the flash memory device.
+ * \ingroup blockdevice_flash
  *
  * \param device Block device object.
  */

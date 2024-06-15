@@ -4,6 +4,10 @@
  */
 #pragma once
 
+/** \file filesystem.h
+ * \defgroup filesystem filesystem
+ * \brief File system abstraction layer
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,18 +36,32 @@ struct dirent {
     char d_name[255 + 1];
 };
 
+/*! \brief file object
+ * \ingroup filesystem
+ *
+ * Files operated on by file system objects are represented by fs_file_t objects
+ */
 typedef struct {
     int fd;
     void *context;
 } fs_file_t;
 
+/*! \brief directory object
+ * \ingroup filesystem
+ *
+ * Directories operated on by file system objects are represented by fs_dir_t objects
+ */
 typedef struct {
     int fd;
     void *context;
     struct dirent current;
 } fs_dir_t;
 
-
+/*! \brief file system abstract object
+ *  \ingroup filesystem
+ *
+ *  All file system objects implement filesystem_t
+ */
 typedef struct filesystem {
     uint8_t type;
     const char *name;

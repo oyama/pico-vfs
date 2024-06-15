@@ -4,6 +4,11 @@
  */
 #pragma once
 
+/** \file fat.h
+ *  \defgroup filesystem_fat filesystem_fat
+ *  \ingroup filesystem
+ *  \brief FAT file system
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,8 +19,7 @@ extern "C" {
 
 
 /*! \brief Create FAT file system object
- *
- * Create FAT file system object.
+ * \ingroup filesystem_fat
  *
  * \return File system object. Returns NULL in case of failure.
  * \retval NULL failed to create file system object.
@@ -23,6 +27,7 @@ extern "C" {
 filesystem_t *filesystem_fat_create();
 
 /*! \brief Release FAT file system object
+ * \ingroup filesystem_fat
  *
  * \param fs FAT file system object
  */

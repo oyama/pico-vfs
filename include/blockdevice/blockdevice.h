@@ -4,6 +4,10 @@
  */
 #pragma once
 
+/** \file blockdevice.h
+ * \defgroup blockdevice blockdevice
+ * \brief Block device abstraction layer for storage media
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -17,6 +21,11 @@ enum bd_error {
     BD_ERROR_DEVICE_ERROR       = -4001, /*!< device specific error */
 };
 
+/*! \brief block device abstract object
+ *  \ingroup blockdevice
+ *
+ *  All block device objects implement blockdevice_t
+ */
 typedef struct blockdevice {
     int (*init)(struct blockdevice *device);
     int (*deinit)(struct blockdevice *device);

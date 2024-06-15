@@ -4,6 +4,10 @@
  */
 #pragma once
 
+/** \defgroup blockdevice_heap blockdevice_heap
+ *  \ingroup blockdevice
+ *  \brief Heap memory block device
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,6 +16,7 @@ extern "C" {
 #include "blockdevice/blockdevice.h"
 
 /*! \brief Create RAM heap memory block device
+ * \ingroup blockdevice_heap
  *
  * Create a block device object that uses RAM heap memory.  The size of heap memory allocated to the block device is specified by size.
  *
@@ -22,6 +27,7 @@ extern "C" {
 blockdevice_t *blockdevice_heap_create(size_t size);
 
 /*! \brief Release the heap memory device.
+ * \ingroup blockdevice_heap
  *
  * \param device Block device object.
  */

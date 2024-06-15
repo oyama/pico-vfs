@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 /*! \brief Enable predefined file systems
+ * \ingroup filesystem
  *
  * This default function defines the block device and file system, formats it if necessary and then mounts it on `/` to make it available.
  * The `pico_enable_filesystem` function in CMakeLists.txt provides a default or user-defined fs_init function.
@@ -29,6 +30,7 @@ extern "C" {
 bool fs_init(void);
 
 /*! \brief Format block device with specify file system
+ * \ingroup filesystem
  *
  * Block devices can be formatted and made available as a file system.
  *
@@ -40,6 +42,7 @@ bool fs_init(void);
 int fs_format(filesystem_t *fs, blockdevice_t *device);
 
 /*! \brief Mount a file system
+ * \ingroup filesystem
  *
  * Mounts a file system with block devices at the specified path.
  *
@@ -52,6 +55,7 @@ int fs_format(filesystem_t *fs, blockdevice_t *device);
 int fs_mount(const char *path, filesystem_t *fs, blockdevice_t *device);
 
 /*! \brief Dismount a file system
+ * \ingroup filesystem
  *
  * Dismount a file system.
  *
@@ -62,6 +66,7 @@ int fs_mount(const char *path, filesystem_t *fs, blockdevice_t *device);
 int fs_unmount(const char *path);
 
 /*! \brief Reformat the mounted file system
+ * \ingroup filesystem
  *
  * Reformat a file system mounted at the specified path.
  *
@@ -72,6 +77,7 @@ int fs_unmount(const char *path);
 int fs_reformat(const char *path);
 
 /*! \brief Lookup filesystem and blockdevice objects from a mount point
+ * \ingroup filesystem
  *
  * \param path Directory path of the mount point. Must be the same as the path specified for the mount.
  * \param fs Pointer references to filesystem objects
@@ -82,6 +88,7 @@ int fs_reformat(const char *path);
 int fs_info(const char *path, filesystem_t **fs, blockdevice_t **device);
 
 /*! \brief File system error message
+ * \ingroup filesystem
  *
  * Convert the error code reported in the negative integer into a string.
  *

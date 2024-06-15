@@ -4,6 +4,10 @@
  */
 #pragma once
 
+/** \defgroup blockdevice_loopback blockdevice_loopback
+ *  \ingroup blockdevice
+ *  \brief Loopback disk image file block device
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -12,6 +16,7 @@ extern "C" {
 #include "blockdevice/blockdevice.h"
 
 /*! \brief Create loopback block device
+ * \ingroup blockdevice_loopback
  *
  * Create a loopback device object that uses a disk image file. Specify the file path allocated to the block device, as well as the maximum size capacity and block size block_size.
  *
@@ -24,6 +29,7 @@ extern "C" {
 blockdevice_t *blockdevice_loopback_create(const char *path, size_t capacity, size_t block_size);
 
 /*! \brief Release the loopback device.
+ * \ingroup blockdevice_loopback
  *
  * \param device Block device object.
  */

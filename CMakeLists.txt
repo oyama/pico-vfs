@@ -9,16 +9,18 @@ set(CMAKE_CXX_STANDARD 17)
 project(pico-vfs C CXX ASM)
 pico_sdk_init()
 
+# Blockdevice header library
+add_library(blockdevice INTERFACE)
+target_include_directories(blockdevice INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
+
 # SD Card blockdevice library
 add_library(blockdevice_sd INTERFACE)
 target_sources(blockdevice_sd INTERFACE
   src/blockdevice/sd.c
 )
-target_include_directories(blockdevice_sd INTERFACE
-  ${CMAKE_CURRENT_LIST_DIR}/include
-)
 target_compile_options(blockdevice_sd INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_sd INTERFACE
+  blockdevice
   hardware_spi
   hardware_sync
 )
@@ -28,11 +30,9 @@ add_library(blockdevice_flash INTERFACE)
 target_sources(blockdevice_flash INTERFACE
   src/blockdevice/flash.c
 )
-target_include_directories(blockdevice_flash INTERFACE
-  ${CMAKE_CURRENT_LIST_DIR}/include
-)
 target_compile_options(blockdevice_flash INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_flash INTERFACE
+  blockdevice
   hardware_flash
   hardware_sync
   pico_sync
@@ -43,26 +43,28 @@ add_library(blockdevice_heap INTERFACE)
 target_sources(blockdevice_heap INTERFACE
   src/blockdevice/heap.c
 )
-target_include_directories(blockdevice_heap INTERFACE
-  ${CMAKE_CURRENT_LIST_DIR}/include
-)
 target_compile_options(blockdevice_heap INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
-target_link_libraries(blockdevice_heap INTERFACE pico_sync)
+target_link_libraries(blockdevice_heap INTERFACE
+  blockdevice
+  pico_sync
+)
 
 # Loopback virtual blockdevice library
 add_library(blockdevice_loopback INTERFACE)
 target_sources(blockdevice_loopback INTERFACE
   src/blockdevice/loopback.c
 )
-target_include_directories(blockdevice_loopback INTERFACE
-  ${CMAKE_CURRENT_LIST_DIR}/include
-)
 target_compile_options(blockdevice_loopback INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_loopback INTERFACE
+  blockdevice
   pico_sync
   filesystem_vfs
 )
 
+
+# Filesystem header library
+add_library(filesystem INTERFACE)
+target_include_directories(filesystem INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 
 # FAT filesystem library
 add_library(filesystem_fat INTERFACE)
@@ -78,7 +80,10 @@ target_include_directories(filesystem_fat INTERFACE
   vendor/ff15/source
 )
 target_compile_options(filesystem_fat INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
-target_link_libraries(filesystem_fat INTERFACE pico_sync)
+target_link_libraries(filesystem_fat INTERFACE
+  filesystem
+  pico_sync
+)
 
 # littlefs filesystem library
 add_library(filesystem_littlefs INTERFACE)
@@ -89,7 +94,11 @@ target_sources(filesystem_littlefs INTERFACE
 )
 target_include_directories(filesystem_littlefs INTERFACE vendor/littlefs)
 target_compile_options(filesystem_littlefs INTERFACE -Wno-unused-function -Wno-null-dereference)
-target_link_libraries(filesystem_littlefs INTERFACE pico_sync)
+target_link_libraries(filesystem_littlefs INTERFACE
+  filesystem
+  pico_sync
+)
+
 
 # VFS interface library
 add_library(filesystem_vfs INTERFACE)
