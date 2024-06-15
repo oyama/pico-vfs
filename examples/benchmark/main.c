@@ -162,7 +162,7 @@ int main(void) {
     stdio_init_all();
     init_filesystem_combination();
 
-    for (size_t i = 0; i < NUM_COMBINATION; i++) {
+    for (size_t i = 3; i < NUM_COMBINATION; i++) {
         struct combination_map setting = combination[i];
         printf("Test of %s on %s:\n", setting.filesystem->name, setting.device->name);
 
@@ -172,12 +172,12 @@ int main(void) {
             continue;
         }
         if (err == -1) {
-            printf("fs_format error: %s\n", strerror(errno));
+            printf("fs_format error: %s\n", fs_strerror(errno));
             return -1;
         }
         err = fs_mount("/", setting.filesystem, setting.device);
         if (err == -1) {
-            printf("fs_mount / error: %s\n", strerror(errno));
+            printf("fs_mount / error: %s\n", fs_strerror(errno));
             return -1;
         }
 
@@ -186,7 +186,7 @@ int main(void) {
 
         err = fs_unmount("/");
         if (err == 01) {
-            printf("fs_unmount / error: %s\n", strerror(errno));
+            printf("fs_unmount / error: %s\n", fs_strerror(errno));
             return -1;
         }
     }

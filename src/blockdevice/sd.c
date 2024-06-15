@@ -486,7 +486,7 @@ static int _cmd8(void *_config) {
 
     arg |= (0x1 << 8);  // 2.7-3.6V             // [11:8]supply voltage(VHS)
 
-    status = _cmd(config, CMD8_SEND_IF_COND, arg, false, NULL);
+    status = _cmd(config, CMD8_SEND_IF_COND, arg, false, &response);
     // Verify voltage and pattern for V2 version of card
     if ((BD_ERROR_OK == status) && (SDCARD_V2 == config->card_type)) {
         // If check pattern is not matched, CMD8 communication is not valid
