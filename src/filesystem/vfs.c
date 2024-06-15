@@ -694,8 +694,51 @@ struct dirent *readdir(DIR *dir) {
     }
 }
 
-char *fs_strerror(int error) {
-    return strerror(-error);
+char *fs_strerror(int errnum) {
+    if (errnum > 5000) {
+        // SD blockdevice error
+        const char *str = "";
+        switch (errnum) {
+        case 5001:
+            str = "operation would block";
+            break;
+        case 5002:
+            str = "unsupported operation";
+            break;
+        case 5003:
+            str = "invalid parameter";
+            break;
+        case 5004:
+            str = "uninitialized";
+            break;
+        case 5005:
+            str = "device is missing or not connected";
+            break;
+        case 5006:
+            str = "write protected";
+            break;
+        case 5007:
+            str = "unusable card";
+            break;
+        case 5008:
+            str = "No response from device";
+            break;
+        case 5009:
+            str = "CRC error";
+            break;
+        case 5010:
+            str = "Erase error: reset/sequence";
+            break;
+        case 5011:
+            str = "Write error: !SPI_DATA_ACCEPTED";
+            break;
+        default:
+            break;
+        }
+        return (char *)str;
+    } else {
+        return strerror(errnum);
+    }
 }
 
 #if defined(PICO_FS_AUTO_INIT)
