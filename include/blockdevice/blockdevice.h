@@ -35,7 +35,7 @@ typedef struct blockdevice {
     int (*program)(struct blockdevice *device, const void *buffer, size_t addr, size_t size);
     int (*erase)(struct blockdevice *device, size_t addr, size_t size);
     int (*trim)(struct blockdevice *device, size_t addr, size_t size);
-    size_t (*size)(struct blockdevice *device);
+    uint64_t (*size)(struct blockdevice *device);
     size_t read_size;
     size_t erase_size;
     size_t program_size;

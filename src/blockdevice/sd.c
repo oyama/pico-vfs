@@ -30,7 +30,7 @@ typedef struct {
     bool is_initialized;
     size_t block_size;
     size_t erase_size;
-    size_t total_sectors;
+    uint64_t total_sectors;
     mutex_t _mutex;
 } blockdevice_sd_config_t;
 
@@ -643,12 +643,12 @@ static int _read_bytes(void *_config, uint8_t *buffer, uint32_t length) {
     return 0;
 }
 
-static size_t _sd_sectors(void *_config) {
+static uint64_t _sd_sectors(void *_config) {
     blockdevice_sd_config_t *config = _config;
     uint32_t c_size, c_size_mult, read_bl_len;
     uint32_t block_len, mult, blocknr;
     uint32_t hc_c_size;
-    size_t blocks = 0, capacity = 0;
+    uint64_t blocks = 0, capacity = 0;
 
     // CMD9, Response R2 (R1 byte + 16-byte block read)
     if (_cmd(config, CMD9_SEND_CSD, 0x0, 0, NULL) != 0x0) {
@@ -671,7 +671,7 @@ static size_t _sd_sectors(void *_config) {
             block_len = 1 << read_bl_len;                // BLOCK_LEN = 2^READ_BL_LEN
             mult = 1 << (c_size_mult + 2);               // MULT = 2^C_SIZE_MULT+2 (C_SIZE_MULT < 8)
             blocknr = (c_size + 1) * mult;               // BLOCKNR = (C_SIZE+1) * MULT
-            capacity = (size_t)blocknr * block_len;  // memory capacity = BLOCKNR * BLOCK_LEN
+            capacity = (uint64_t)blocknr * block_len;  // memory capacity = BLOCKNR * BLOCK_LEN
             blocks = capacity / config->block_size;
             debug_if(SD_DBG, "Standard Capacity: c_size: %" PRIu32 " \n", c_size);
             debug_if(SD_DBG, "Sectors: 0x%" PRIx64 " : %" PRIu64 "\n", blocks, blocks);
@@ -1025,7 +1025,7 @@ static int trim(blockdevice_t *device, size_t addr, size_t size) {
     return status;
 }
 
-static size_t size(blockdevice_t *device) {
+static uint64_t size(blockdevice_t *device) {
     blockdevice_sd_config_t *config = device->config;
     return config->block_size * config->total_sectors;
 }

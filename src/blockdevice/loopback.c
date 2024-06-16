@@ -132,9 +132,9 @@ static int trim(blockdevice_t *device, size_t addr, size_t length) {
     return BD_ERROR_OK;
 }
 
-static size_t size(blockdevice_t *device) {
+static uint64_t size(blockdevice_t *device) {
     blockdevice_loopback_config_t *config = device->config;
-    return config->capacity;
+    return (uint64_t)config->capacity;
 }
 
 blockdevice_t *blockdevice_loopback_create(const char *path, size_t capacity, size_t block_size) {
