@@ -83,9 +83,9 @@ static int trim(blockdevice_t *device, size_t addr, size_t size) {
     return BD_ERROR_OK;
 }
 
-static size_t size(blockdevice_t *device) {
+static uint64_t size(blockdevice_t *device) {
     blockdevice_flash_config_t *config = device->config;
-    return config->length;
+    return (uint64_t)config->length;
 }
 
 blockdevice_t *blockdevice_flash_create(uint32_t start, size_t length) {

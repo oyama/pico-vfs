@@ -132,9 +132,9 @@ static int trim(blockdevice_t *device, size_t addr, size_t length) {
     return BD_ERROR_OK;
 }
 
-static size_t size(blockdevice_t *device) {
+static uint64_t size(blockdevice_t *device) {
     blockdevice_heap_config_t *config = device->config;
-    return config->size;
+    return (uint64_t)config->size;
 }
 
 blockdevice_t *blockdevice_heap_create(size_t length) {
