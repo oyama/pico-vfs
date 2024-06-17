@@ -75,7 +75,7 @@ static int __sync(blockdevice_t *device) {
     return BD_ERROR_OK;
 }
 
-static int __read(blockdevice_t *device, const void *buffer, size_t addr, size_t length) {
+static int __read(blockdevice_t *device, const void *buffer, bd_size_t addr, bd_size_t length) {
     blockdevice_loopback_config_t *config = device->config;
     mutex_enter_blocking(&config->_mutex);
 
@@ -85,12 +85,12 @@ static int __read(blockdevice_t *device, const void *buffer, size_t addr, size_t
         return -errno;
     }
 
-    ssize_t read_size = read(config->fildes, (void *)buffer, length);
+    ssize_t read_size = read(config->fildes, (void *)buffer, (size_t)length);
     if (read_size == -1) {
         mutex_exit(&config->_mutex);
         return -errno;
     }
-    if ((size_t)read_size < length) {
+    if ((size_t)read_size < (size_t)length) {
         size_t remind = length - read_size;
         memset((void *)buffer + read_size, 0, remind);
     }
@@ -99,14 +99,14 @@ static int __read(blockdevice_t *device, const void *buffer, size_t addr, size_t
     return BD_ERROR_OK;
 }
 
-static int erase(blockdevice_t *device, size_t addr, size_t length) {
+static int erase(blockdevice_t *device, bd_size_t addr, bd_size_t length) {
     (void)device;
     (void)addr;
     (void)length;
     return BD_ERROR_OK;
 }
 
-static int program(blockdevice_t *device, const void *buffer, size_t addr, size_t length) {
+static int program(blockdevice_t *device, const void *buffer, bd_size_t addr, bd_size_t length) {
     blockdevice_loopback_config_t *config = device->config;
     mutex_enter_blocking(&config->_mutex);
 
@@ -115,7 +115,7 @@ static int program(blockdevice_t *device, const void *buffer, size_t addr, size_
         mutex_exit(&config->_mutex);
         return -errno;
     }
-    ssize_t write_size = write(config->fildes, buffer, length);
+    ssize_t write_size = write(config->fildes, buffer, (size_t)length);
     if (write_size == -1) {
         mutex_exit(&config->_mutex);
         return -errno;
@@ -125,16 +125,16 @@ static int program(blockdevice_t *device, const void *buffer, size_t addr, size_
     return BD_ERROR_OK;
 }
 
-static int trim(blockdevice_t *device, size_t addr, size_t length) {
+static int trim(blockdevice_t *device, bd_size_t addr, bd_size_t length) {
     (void)device;
     (void)addr;
     (void)length;
     return BD_ERROR_OK;
 }
 
-static uint64_t size(blockdevice_t *device) {
+static bd_size_t size(blockdevice_t *device) {
     blockdevice_loopback_config_t *config = device->config;
-    return (uint64_t)config->capacity;
+    return (bd_size_t)config->capacity;
 }
 
 blockdevice_t *blockdevice_loopback_create(const char *path, size_t capacity, size_t block_size) {

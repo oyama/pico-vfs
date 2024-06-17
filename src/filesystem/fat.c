@@ -113,8 +113,8 @@ DSTATUS disk_status(BYTE pdrv) {
 
 DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
     DWORD ssize = disk_get_sector_size(pdrv);
-    size_t addr = sector * ssize;
-    size_t size = count * ssize;
+    bd_size_t addr = (bd_size_t)sector * ssize;
+    bd_size_t size = count * ssize;
     int err = _ffs[(int)pdrv]->read(_ffs[(int)pdrv], (const void *)buff, addr, size);
     return err ? RES_PARERR : RES_OK;
 }
@@ -122,8 +122,8 @@ DRESULT disk_read(BYTE pdrv, BYTE *buff, LBA_t sector, UINT count) {
 DRESULT disk_write(BYTE pdrv, const BYTE *buff, LBA_t sector, UINT count) {
     debug_if(FFS_DBG, "disk_write [%d]\n", pdrv);
     DWORD ssize = disk_get_sector_size(pdrv);
-    size_t addr = sector * ssize;
-    size_t size = count * ssize;
+    bd_size_t addr = (bd_size_t)sector * ssize;
+    bd_size_t size = count * ssize;
 
     int err = _ffs[pdrv]->erase(_ffs[pdrv], addr, size);
     if (err) {
@@ -170,8 +170,8 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff) {
         } else {
             DWORD *sectors = (DWORD *)buff;
             DWORD ssize = disk_get_sector_size(pdrv);
-            size_t addr = sectors[0] * ssize;
-            size_t size = (sectors[1] - sectors[0] + 1) * ssize;
+            bd_size_t addr = (bd_size_t)sectors[0] * ssize;
+            bd_size_t size = (bd_size_t)(sectors[1] - sectors[0] + 1) * ssize;
             int err = _ffs[pdrv]->trim(_ffs[pdrv], addr, size);
             return err ? RES_PARERR : RES_OK;
         }
@@ -240,7 +240,7 @@ static int format(filesystem_t *fs, blockdevice_t *device) {
     }
 
     // erase first handful of blocks
-    size_t header = 2 * device->erase_size;
+    bd_size_t header = 2 * device->erase_size;
     int err = device->erase(device, 0, header);
     if (err) {
         mutex_exit(&context->_mutex_format);
