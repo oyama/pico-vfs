@@ -5,7 +5,7 @@ The project has four tests:
 1. unit tests `unittests` using heap memory
 2. integration tests `integrate` using Raspberry Pi Pico hardware
 3. multi-core tests `multicore`
-4. unit tests `semihosting` on the host
+4. unit tests `host` on the host
 
 ```bash
 cd build
@@ -17,7 +17,7 @@ make run_multicore
 
 ```bash
 cd build
-cmake -DPICO_TARGET=host
-make semihosting
-./tests/semihosting/semihosting
+cmake -DPICO_PLATFORM=host
+make host
+./tests/host/host
 ```

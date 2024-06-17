@@ -1,4 +1,4 @@
-name: Run semihosting unittests
+name: Run unittests
 on: [push]
 env:
   BUILD_TYPE: Debug
@@ -51,9 +51,9 @@ jobs:
     - name: Build
       working-directory: ${{github.workspace}}/pico-vfs/build
       shell: bash
-      run: cmake --build . --target semihosting --config $BUILD_TYPE
+      run: cmake --build . --target host --config $BUILD_TYPE
 
     - name: Test
       working-directory: ${{github.workspace}}/pico-vfs/build
       shell: bash
-      run: ./tests/semihosting/semihosting
+      run: ./tests/host/host
