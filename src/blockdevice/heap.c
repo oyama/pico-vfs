@@ -19,28 +19,6 @@
 #define PICO_VFS_BLOCKDEVICE_HEAP_ERASE_VALUE      0xFF
 #endif
 
-#include <ctype.h>
-static void print_hex(const char *label, const void *buffer, size_t length) {
-    const uint8_t *buf = buffer;
-    printf("%s:\n", label);
-    size_t offset = 0;
-    for (size_t i = 0; i < length; ++i) {
-        if (i % 16 == 0)
-            printf("0x%04u%s", offset, (i % 512) == 0 ? ">" : " ");
-        if (isalnum(buf[i])) {
-            printf("'%c' ", buf[i]);
-        } else {
-            printf("0x%02x", buf[i]);
-        }
-        if (i % 16 == 15) {
-            printf("\n");
-            offset += 16;
-        } else {
-            printf(", ");
-        }
-    }
-}
-
 typedef struct {
     size_t size;
     uint8_t *heap;
