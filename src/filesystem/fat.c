@@ -507,7 +507,7 @@ static int file_sync(filesystem_t *fs, fs_file_t *file) {
     FRESULT res = f_sync(&fat_file->file);
     mutex_exit(&context->_mutex);
 
-    if (!res != FR_OK) {
+    if (res != FR_OK) {
         debug_if(FFS_DBG, "f_sync() failed: %d\n", res);
     }
     return fat_error_remap(res);

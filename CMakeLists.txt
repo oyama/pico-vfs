@@ -93,7 +93,7 @@ target_sources(filesystem_littlefs INTERFACE
   vendor/littlefs/lfs_util.c
 )
 target_include_directories(filesystem_littlefs INTERFACE vendor/littlefs)
-target_compile_options(filesystem_littlefs INTERFACE -Wno-unused-function -Wno-null-dereference)
+target_compile_options(filesystem_littlefs INTERFACE -DLFS_NO_DEBUG -Wno-unused-function -Wno-null-dereference)
 target_link_libraries(filesystem_littlefs INTERFACE
   filesystem
   pico_sync

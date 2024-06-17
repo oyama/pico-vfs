@@ -1,7 +1,7 @@
-name: Build on Ubuntu
-on: [push, pull_request]
+name: Run semihosting unittests
+on: [push]
 env:
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
   build:
@@ -46,9 +46,14 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/pico-vfs/build
-      run: PICO_SDK_PATH=../../pico-sdk cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: PICO_SDK_PATH=../../pico-sdk cmake .. -DPICO_PLATFORM=host -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
     - name: Build
       working-directory: ${{github.workspace}}/pico-vfs/build
       shell: bash
-      run: cmake --build . --target integration --config $BUILD_TYPE
+      run: cmake --build . --target semihosting --config $BUILD_TYPE
+
+    - name: Test
+      working-directory: ${{github.workspace}}/pico-vfs/build
+      shell: bash
+      run: ./tests/semihosting/semihosting
