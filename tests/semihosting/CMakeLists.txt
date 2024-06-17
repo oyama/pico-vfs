@@ -7,7 +7,10 @@ add_executable(semihosting
   test_benchmark.c
 )
 target_compile_options(pico_stdio INTERFACE -Wno-error=unused-parameter -Wno-error=sign-compare)
-target_compile_options(semihosting PRIVATE -Wno-incompatible-function-pointer-types)
+target_compile_options(semihosting PRIVATE
+  -Wno-incompatible-function-pointer-types
+  -Wno-incompatible-pointer-types
+)
 target_link_libraries(semihosting PRIVATE
   pico_stdlib
   blockdevice_heap
