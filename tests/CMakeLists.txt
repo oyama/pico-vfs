@@ -24,6 +24,7 @@ pico_enable_stdio_usb(unittests 1)
 
 add_subdirectory(integration)
 add_subdirectory(multicore)
+add_subdirectory(large_file)
 
 find_program(OPENOCD openocd)
 if(OPENOCD)

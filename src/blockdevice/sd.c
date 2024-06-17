@@ -755,13 +755,13 @@ static int init(blockdevice_t *device) {
     return BD_ERROR_OK;
 }
 
-static bool is_valid_read(blockdevice_t *device, size_t addr, size_t size) {
+static bool is_valid_read(blockdevice_t *device, bd_size_t addr, bd_size_t size) {
     return (addr % device->read_size == 0 &&
             size % device->read_size == 0 &&
             addr + size <= device->size(device));
 }
 
-static bool is_valid_program(blockdevice_t *device, size_t addr, size_t size) {
+static bool is_valid_program(blockdevice_t *device, bd_size_t addr, bd_size_t size) {
     return (addr % device->program_size == 0 &&
             size % device->program_size == 0 &&
             addr + size <= device->size(device));
@@ -807,7 +807,7 @@ static int _read(void *_config, uint8_t *buffer, uint32_t length) {
     return 0;
 }
 
-static int read(blockdevice_t *device, const void *_buffer, size_t addr, size_t size) {
+static int read(blockdevice_t *device, const void *_buffer, bd_size_t addr, bd_size_t size) {
     blockdevice_sd_config_t *config = device->config;
     mutex_enter_blocking(&config->_mutex);
 
@@ -895,7 +895,7 @@ static uint8_t _write(void *_config, const uint8_t *buffer, uint8_t token, uint3
 }
 
 
-static int program(blockdevice_t *device, const void *_buffer, size_t addr, size_t size) {
+static int program(blockdevice_t *device, const void *_buffer, bd_size_t addr, bd_size_t size) {
     blockdevice_sd_config_t *config = device->config;
     mutex_enter_blocking(&config->_mutex);
 
@@ -970,14 +970,14 @@ static int program(blockdevice_t *device, const void *_buffer, size_t addr, size
     return status;
 }
 
-static int erase(blockdevice_t *device, size_t addr, size_t size) {
+static int erase(blockdevice_t *device, bd_size_t addr, bd_size_t size) {
     (void)device;
     (void)addr;
     (void)size;
     return 0;
 }
 
-static bool _is_valid_trim(blockdevice_t *device, size_t addr, size_t size) {
+static bool _is_valid_trim(blockdevice_t *device, bd_size_t addr, bd_size_t size) {
     blockdevice_sd_config_t *config = device->config;
 
     return (addr % config->erase_size == 0 &&
@@ -985,7 +985,7 @@ static bool _is_valid_trim(blockdevice_t *device, size_t addr, size_t size) {
             addr + size <= device->size(device));
 }
 
-static int trim(blockdevice_t *device, size_t addr, size_t size) {
+static int trim(blockdevice_t *device, bd_size_t addr, bd_size_t size) {
     blockdevice_sd_config_t *config = device->config;
     mutex_enter_blocking(&config->_mutex);
 
@@ -1025,7 +1025,7 @@ static int trim(blockdevice_t *device, size_t addr, size_t size) {
     return status;
 }
 
-static uint64_t size(blockdevice_t *device) {
+static bd_size_t size(blockdevice_t *device) {
     blockdevice_sd_config_t *config = device->config;
     return config->block_size * config->total_sectors;
 }

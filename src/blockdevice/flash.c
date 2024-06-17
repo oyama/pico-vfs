@@ -41,51 +41,51 @@ static int sync(blockdevice_t *device) {
     return 0;
 }
 
-static int read(blockdevice_t *device, const void *buffer, size_t addr, size_t size) {
+static int read(blockdevice_t *device, const void *buffer, bd_size_t addr, bd_size_t size) {
     blockdevice_flash_config_t *config = device->config;
 
     mutex_enter_blocking(&config->_mutex);
-    const uint8_t *flash_contents = (const uint8_t *)(XIP_BASE + flash_target_offset(device) + addr);
-    memcpy((uint8_t *)buffer, flash_contents, size);
+    const uint8_t *flash_contents = (const uint8_t *)(XIP_BASE + flash_target_offset(device) + (size_t)addr);
+    memcpy((uint8_t *)buffer, flash_contents, (size_t)size);
     mutex_exit(&config->_mutex);
 
     return BD_ERROR_OK;
 }
 
-static int erase(blockdevice_t *device, size_t addr, size_t size) {
+static int erase(blockdevice_t *device, bd_size_t addr, bd_size_t size) {
     blockdevice_flash_config_t *config = device->config;
 
     mutex_enter_blocking(&config->_mutex);
     uint32_t ints = save_and_disable_interrupts();
-    flash_range_erase(flash_target_offset(device) + addr, size);
+    flash_range_erase(flash_target_offset(device) + addr, (size_t)size);
     restore_interrupts(ints);
     mutex_exit(&config->_mutex);
 
     return BD_ERROR_OK;
 }
 
-static int program(blockdevice_t *device, const void *buffer, size_t addr, size_t size) {
+static int program(blockdevice_t *device, const void *buffer, bd_size_t addr, bd_size_t size) {
     blockdevice_flash_config_t *config = device->config;
 
     mutex_enter_blocking(&config->_mutex);
     uint32_t ints = save_and_disable_interrupts();
-    flash_range_program(flash_target_offset(device) + addr, buffer, size);
+    flash_range_program(flash_target_offset(device) + addr, buffer, (size_t)size);
     restore_interrupts(ints);
     mutex_exit(&config->_mutex);
 
     return BD_ERROR_OK;
 }
 
-static int trim(blockdevice_t *device, size_t addr, size_t size) {
+static int trim(blockdevice_t *device, bd_size_t addr, bd_size_t size) {
     (void)device;
     (void)addr;
     (void)size;
     return BD_ERROR_OK;
 }
 
-static uint64_t size(blockdevice_t *device) {
+static bd_size_t size(blockdevice_t *device) {
     blockdevice_flash_config_t *config = device->config;
-    return (uint64_t)config->length;
+    return (bd_size_t)config->length;
 }
 
 blockdevice_t *blockdevice_flash_create(uint32_t start, size_t length) {
