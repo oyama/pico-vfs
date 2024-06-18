@@ -508,9 +508,10 @@ ssize_t _write(int fildes, const void *buf, size_t nbyte) {
         recursive_mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
+    recursive_mutex_exit(&_mutex);
+
     ssize_t size = fs->file_write(fs, file, buf, nbyte);
 
-    recursive_mutex_exit(&_mutex);
     return _error_remap(size);
 }
 
@@ -533,9 +534,9 @@ ssize_t _read(int fildes, void *buf, size_t nbyte) {
         recursive_mutex_exit(&_mutex);
         return _error_remap(-EBADF);
     }
+    recursive_mutex_exit(&_mutex);
 
     ssize_t size = fs->file_read(fs, file, buf, nbyte);
-    recursive_mutex_exit(&_mutex);
 
     return _error_remap(size);
 }

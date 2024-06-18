@@ -15,6 +15,6 @@ target_link_libraries(freertos_benchmark PRIVATE
 )
 target_link_options(freertos_benchmark PRIVATE -Wl,--print-memory-usage)
 
-#pico_set_binary_type(freertos_benchmark no_flash)
+pico_set_binary_type(freertos_benchmark copy_to_ram)
 pico_enable_stdio_usb(freertos_benchmark 1)
 pico_add_extra_outputs(freertos_benchmark)
