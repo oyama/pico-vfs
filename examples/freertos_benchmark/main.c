@@ -22,12 +22,11 @@ static uint32_t xor_rand_32bit(uint32_t *seed) {
     return xor_rand(seed);
 }
 
-void benchmark_task(void *p)
-{
+void benchmark_task(void *p) {
     const char *path = p;
     printf("start benchmark %s on core%d\n", path, get_core_num());
 
-    uint64_t start_at = get_absolute_time();
+    absolute_time_t start_at = get_absolute_time();
     int fd = open(path, O_WRONLY|O_CREAT);
     if (fd == -1) {
         printf("open error: %s\n", strerror(errno));
@@ -105,8 +104,7 @@ void benchmark_task(void *p)
     }
 }
 
-int main(void)
-{
+int main(void) {
     stdio_init_all();
     fs_init();
     printf("FreeRTOS benchmark\n");
