@@ -737,6 +737,23 @@ char *fs_strerror(int errnum) {
             break;
         }
         return (char *)str;
+    } else if (errnum > 4000) {
+        // On-board flash blockdevice error
+        const char *str = "";
+        switch (errnum) {
+        case 4001:
+            str = "operation timeout";
+            break;
+        case 4002:
+            str = "safe execution is not possible";
+            break;
+        case 4003:
+            str = "method fails due to dynamic resource exhaustion";
+            break;
+        default:
+            break;
+        }
+        return (char *)str;
     } else {
         return strerror(errnum);
     }
