@@ -1,6 +1,10 @@
 add_executable(multicore main.c)
-target_compile_options(multicore PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
+target_compile_options(multicore PRIVATE
+  -DPICO_FLASH_ASSUME_CORE1_SAFE=1
+  -Werror -Wall -Wextra -Wnull-dereference
+)
 target_link_libraries(multicore PRIVATE
+  pico_flash
   pico_stdlib
   pico_multicore
   blockdevice_flash
@@ -12,10 +16,9 @@ target_link_libraries(multicore PRIVATE
 )
 target_link_options(multicore PRIVATE -Wl,--print-memory-usage)
 pico_add_extra_outputs(multicore)
-pico_enable_stdio_uart(multicore 1)
 pico_enable_stdio_usb(multicore 0)
+pico_enable_filesystem(multicore FS_INIT fs_init.c)
 pico_set_binary_type(multicore copy_to_ram)
-
 
 find_program(OPENOCD openocd)
 if(OPENOCD)

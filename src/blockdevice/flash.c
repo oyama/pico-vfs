@@ -7,10 +7,17 @@
 #include <hardware/flash.h>
 #include <hardware/regs/addressmap.h>
 #include <hardware/sync.h>
+#include <pico/flash.h>
 #include <pico/mutex.h>
 #include <stdio.h>
 #include <string.h>
 #include "blockdevice/flash.h"
+
+#define FLASH_SAFE_EXECUTE_TIMEOUT   10 * 1000
+
+#define FLASH_BLOCK_DEVICE_ERROR_TIMEOUT                -4001  /*!< operation timeout */
+#define FLASH_BLOCK_DEVICE_ERROR_NOT_PERMITTED          -4002  /*!< safe execution is not possible */
+#define FLASH_BLOCK_DEVICE_ERROR_INSUFFICIENT_RESOURCES -4003 /*!< method fails due to dynamic resource exhaustion */
 
 typedef struct {
     uint32_t start;
@@ -18,7 +25,29 @@ typedef struct {
     mutex_t _mutex;
 } blockdevice_flash_config_t;
 
+typedef struct {
+    bool is_erase;
+    size_t addr;
+    size_t size;
+    void *buffer;
+} _safe_flash_update_param_t;
+
 static const char DEVICE_NAME[] = "flash";
+
+static int _error_remap(int err) {
+    switch (err) {
+    case PICO_OK:
+        return BD_ERROR_OK;
+    case PICO_ERROR_TIMEOUT:
+        return FLASH_BLOCK_DEVICE_ERROR_TIMEOUT;
+    case PICO_ERROR_NOT_PERMITTED:
+        return FLASH_BLOCK_DEVICE_ERROR_NOT_PERMITTED;
+    case PICO_ERROR_INSUFFICIENT_RESOURCES:
+        return FLASH_BLOCK_DEVICE_ERROR_INSUFFICIENT_RESOURCES;
+    default:
+        return err;
+    }
+}
 
 static size_t flash_target_offset(blockdevice_t *device) {
     blockdevice_flash_config_t *config = device->config;
@@ -52,28 +81,34 @@ static int read(blockdevice_t *device, const void *buffer, bd_size_t addr, bd_si
     return BD_ERROR_OK;
 }
 
+static void _safe_flash_update(void *param) {
+    const _safe_flash_update_param_t *args = param;
+    if (args->is_erase) {
+        flash_range_erase(args->addr, args->size);
+    } else {
+        flash_range_program(args->addr, (const uint8_t *)args->buffer, args->size);
+    }
+}
+
 static int erase(blockdevice_t *device, bd_size_t addr, bd_size_t size) {
-    blockdevice_flash_config_t *config = device->config;
-
-    mutex_enter_blocking(&config->_mutex);
-    uint32_t ints = save_and_disable_interrupts();
-    flash_range_erase(flash_target_offset(device) + addr, (size_t)size);
-    restore_interrupts(ints);
-    mutex_exit(&config->_mutex);
-
-    return BD_ERROR_OK;
+    _safe_flash_update_param_t param = {
+        .is_erase = true,
+        .addr = flash_target_offset(device) + addr,
+        .size = (size_t)size,
+    };
+    int err = flash_safe_execute(_safe_flash_update, &param, FLASH_SAFE_EXECUTE_TIMEOUT);
+    return _error_remap(err);
 }
 
 static int program(blockdevice_t *device, const void *buffer, bd_size_t addr, bd_size_t size) {
-    blockdevice_flash_config_t *config = device->config;
-
-    mutex_enter_blocking(&config->_mutex);
-    uint32_t ints = save_and_disable_interrupts();
-    flash_range_program(flash_target_offset(device) + addr, buffer, (size_t)size);
-    restore_interrupts(ints);
-    mutex_exit(&config->_mutex);
-
-    return BD_ERROR_OK;
+    _safe_flash_update_param_t param = {
+        .is_erase = false,
+        .addr = flash_target_offset(device) + addr,
+        .buffer = (void *)buffer,
+        .size = (size_t)size,
+    };
+    int err = flash_safe_execute(_safe_flash_update, &param, FLASH_SAFE_EXECUTE_TIMEOUT);
+    return _error_remap(err);
 }
 
 static int trim(blockdevice_t *device, bd_size_t addr, bd_size_t size) {

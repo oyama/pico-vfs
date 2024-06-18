@@ -33,9 +33,11 @@ target_sources(blockdevice_flash INTERFACE
 target_compile_options(blockdevice_flash INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_flash INTERFACE
   blockdevice
+  hardware_exception
   hardware_flash
   hardware_sync
   pico_sync
+  pico_flash
 )
 
 # Heap memory blockdevice library

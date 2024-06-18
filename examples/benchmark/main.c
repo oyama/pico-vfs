@@ -76,7 +76,7 @@ static uint32_t xor_rand_32bit(uint32_t *seed) {
 
 static void benchmark_write(void) {
     const char *label = "Write";
-    uint64_t start_at = get_absolute_time();
+    absolute_time_t start_at = get_absolute_time();
 
     int fd = open("/benchmark", O_WRONLY|O_CREAT);
     if (fd == -1) {
@@ -116,7 +116,7 @@ static void benchmark_write(void) {
 
 static void benchmark_read(void) {
     const char *label = "Read";
-    uint64_t start_at = get_absolute_time();
+    absolute_time_t start_at = get_absolute_time();
 
     int fd = open("/benchmark", O_RDONLY);
     if (fd == -1) {
