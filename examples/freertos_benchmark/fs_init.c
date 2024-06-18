@@ -38,22 +38,18 @@ bool fs_init(void) {
         }
     }
 
-    printf("mount /flash\n");
+    printf("format and mount /flash\n");
     blockdevice_t *device = blockdevice_flash_create(PICO_FLASH_SIZE_BYTES - PICO_FS_DEFAULT_SIZE, 0);
     filesystem_t *fs = filesystem_littlefs_create(500, 16);
+    err = fs_format(fs, device);
+    if (err == -1) {
+        printf("fs_format error: %s", strerror(errno));
+        return false;
+    }
     err = fs_mount("/flash", fs, device);
     if (err == -1) {
-        printf("format /flash\n");
-        err = fs_format(fs, device);
-        if (err == -1) {
-            printf("fs_format error: %s", strerror(errno));
-            return false;
-        }
-        err = fs_mount("/flash", fs, device);
-        if (err == -1) {
-            printf("fs_mount error: %s", strerror(errno));
-            return false;
-        }
+        printf("fs_mount error: %s", strerror(errno));
+        return false;
     }
     return true;
 }

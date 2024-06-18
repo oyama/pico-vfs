@@ -1,15 +1,15 @@
 #include <FreeRTOS.h>
-#include <portable.h>
-
-#include <task.h>
 #include <errno.h>
-#include <string.h>
 #include <pico/stdlib.h>
+#include <portable.h>
 #include <stdio.h>
+#include <string.h>
+#include <task.h>
 #include "filesystem/vfs.h"
 
 #define BENCHMARK_SIZE       (0.4 * 1024 * 1024)
-#define BUFFER_SIZE          (512 * 1)
+#define BUFFER_SIZE          (1024 * 2)
+#define CORE_ACCESSING_FLASH 1            // core0
 
 static uint32_t xor_rand(uint32_t *seed) {
     *seed ^= *seed << 13;
@@ -25,7 +25,7 @@ static uint32_t xor_rand_32bit(uint32_t *seed) {
 void benchmark_task(void *p)
 {
     const char *path = p;
-    printf("start benchmark %s\n", path);
+    printf("start benchmark %s on core%d\n", path, get_core_num());
 
     uint64_t start_at = get_absolute_time();
     int fd = open(path, O_WRONLY|O_CREAT);
@@ -47,7 +47,7 @@ void benchmark_task(void *p)
 
         ssize_t write_size = write(fd, buffer, chunk);
         if (write_size == -1) {
-            printf("write: error: %s\n", strerror(errno));
+            printf("write error: %s\n", strerror(errno));
             return;
         }
         remind = remind - write_size;
@@ -58,9 +58,47 @@ void benchmark_task(void *p)
         printf("close error: %s\n", strerror(errno));
         return;
     }
-
     double duration = (double)absolute_time_diff_us(start_at, get_absolute_time()) / 1000 / 1000;
-    printf("Finish %s: %.1f KB/s\n", path, (double)(BENCHMARK_SIZE) / duration / 1024);
+    printf("Write %s: %.1f KB/s\n", path, (double)(BENCHMARK_SIZE) / duration / 1024);
+
+
+    start_at = get_absolute_time();
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        printf("open error: %s\n", strerror(errno));
+        return;
+    }
+
+    counter = 0;
+    xor_rand(&counter);
+    remind = BENCHMARK_SIZE;
+    while (remind > 0) {
+        size_t chunk = remind % sizeof(buffer) ? remind % sizeof(buffer) : sizeof(buffer);
+        ssize_t read_size = read(fd, buffer, chunk);
+        if (read_size == -1) {
+            printf("read error: %s\n", strerror(errno));
+            return;
+        }
+        uint32_t *b = (uint32_t *)buffer;
+        for (size_t j = 0; j < chunk / sizeof(uint32_t); j++) {
+            volatile uint32_t v = xor_rand_32bit(&counter);
+            if (b[j] != v) {
+                printf("data mismatch\n");
+                return;
+            }
+        }
+
+        remind = remind - read_size;
+    }
+
+    err = close(fd);
+    if (err == -1) {
+        printf("close error: %s\n", strerror(errno));
+        return;
+    }
+    duration = (double)absolute_time_diff_us(start_at, get_absolute_time()) / 1000 / 1000;
+    printf("Read %s: %.1f KB/s\n", path, (double)(BENCHMARK_SIZE) / duration / 1024);
+
 
     while (true) {
        ;
@@ -77,11 +115,10 @@ int main(void)
 
     TaskHandle_t task_handle;
     xTaskCreate(benchmark_task, "flash", 1024*1, "/flash/benchmark", 1, &(task_handle));
-    //vTaskCoreAffinitySet(task_handle, 1);
+    vTaskCoreAffinitySet(task_handle, CORE_ACCESSING_FLASH);
 
     vTaskStartScheduler();
 
     while (true)
         ;
 }
-
