@@ -1,6 +1,3 @@
-/*
- * NOTE: When operating Flash memory from core1, it must be run from RAM.
- */
 #include <assert.h>
 #include <pico/flash.h>
 #include <pico/multicore.h>
