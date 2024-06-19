@@ -32,8 +32,7 @@ typedef struct {
 } sensor_data_t;
 
 queue_t sensor_queue;
-static char write_buffer[1024 * 64];
-
+static char write_buffer[1024 * 8];
 
 static float normal_random(float mean, float stddev) {
     static bool has_spare = false;
@@ -105,10 +104,10 @@ int main(void) {
     while (1) {
         queue_remove_blocking(&sensor_queue, &entry);
         fprintf(fp, "%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
-               (double)entry.timestamp / 1000 / 1000,
-               entry.accel_x, entry.accel_y, entry.accel_z,
-               entry.gyro_x, entry.gyro_y, entry.gyro_x,
-               entry.mag_x, entry.mag_y, entry.mag_z);
+                (double)entry.timestamp / 1000 / 1000,
+                entry.accel_x, entry.accel_y, entry.accel_z,
+                entry.gyro_x, entry.gyro_y, entry.gyro_x,
+                entry.mag_x, entry.mag_y, entry.mag_z);
         n += 1;
         absolute_time_t now = get_absolute_time();
         int64_t duration = absolute_time_diff_us(last_checkpoint, now);
