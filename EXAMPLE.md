@@ -4,8 +4,9 @@
 |-----------------|-------------------------------------------------------------------------|
 | [hello](examples/hello)  | Hello filesystem world.                                                 |
 | [fs\_inits](examples/fs_inits) | Examples of file system layout combinations.                      |
-| [usb\_msc\_logger](examples/usb_msc_logger) | Data logger that mounts littlefs and FAT on flash memory and shares it with a PC via USB mass storage class.|
+| [multicore\_logger](examples/multicore_logger) | Store high sampling rate sensor data on SD cards. |
 | [elastic\_mqtt\_client](examples/elastic_mqtt_client) |Implements an MQTT client with a local queue to handle network disconnections seamlessly. |
+| [usb\_logger](examples/usb_logger) | Data logger that mounts littlefs and FAT on flash memory and shares it with a PC via USB mass storage class.|
 | [benchmark](examples/benchmark)| Data transfer tests with different block devices and different file system combinations.|
 
 ## Building sample code
@@ -17,7 +18,7 @@ Firmware can be built from the _CMake_ build directory of _pico-vfs_.
 ```bash
 mkdir build; cd build/
 PICO_SDK_PATH=/path/to/pico-sdk cmake ..
-make hello fs_init_example logger benchmark
+make hello fs_init_example multicore_logger usb_logger benchmark
 ```
 
 The `elastic_mqtt_client` uses Wi-Fi, so `PICO_BOARD=pico_w` needs to be specified. Furthermore, `WIFI_SSID`, `WIFI_PASSWORD`, `MQTT_USER` and `MQTT_PASSWORD` must be specified in the environment variables when running cmake. This example uses [Adafruit IO](https://io.adafruit.com/)'s MQTT server.
