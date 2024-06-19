@@ -1,4 +1,5 @@
 add_executable(multicore_logger main.c fs_init.c)
+target_compile_options(multicore_logger PRIVATE -O2)
 target_link_libraries(multicore_logger PRIVATE
   pico_stdlib
   pico_util

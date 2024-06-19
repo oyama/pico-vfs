@@ -4,7 +4,7 @@
 |-----------------|-------------------------------------------------------------------------|
 | [hello](examples/hello)  | Hello filesystem world.                                                 |
 | [fs\_inits](examples/fs_inits) | Examples of file system layout combinations.                      |
-| [multicore\_logger](examples/multicore_logger) | Multi-core 500 Hz sampling rate sensor data stored on SD card |
+| [multicore\_logger](examples/multicore_logger) | Multi-core 1kHz sampling rate sensor data stored on SD card |
 | [elastic\_mqtt\_client](examples/elastic_mqtt_client) |Implements an MQTT client with a local queue to handle network disconnections seamlessly. |
 | [usb\_logger](examples/usb_logger) | Data logger that mounts littlefs and FAT on flash memory and shares it with a PC via USB mass storage class.|
 | [benchmark](examples/benchmark)| Data transfer tests with different block devices and different file system combinations.|

@@ -15,7 +15,7 @@
 #include "filesystem/vfs.h"
 
 #if !defined(SAMPLING_RATE_HZ)
-#define SAMPLING_RATE_HZ  500
+#define SAMPLING_RATE_HZ  1000
 #endif
 
 typedef struct {
@@ -32,6 +32,8 @@ typedef struct {
 } sensor_data_t;
 
 queue_t sensor_queue;
+static char write_buffer[1024 * 64];
+
 
 static float normal_random(float mean, float stddev) {
     static bool has_spare = false;
@@ -89,6 +91,8 @@ int main(void) {
     if (fp == NULL) {
         printf("fopen failed: %s\n", strerror(errno));
     }
+    setvbuf(fp, write_buffer, _IOFBF, sizeof(write_buffer));
+
     fprintf(fp, "Time,AccelX,AccelY,AccelZ,GyroX,GyroY,GyroZ,MagX,MagY,Magz\n");
 
     multicore_reset_core1();
