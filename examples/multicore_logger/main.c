@@ -33,16 +33,16 @@ typedef struct {
 
 queue_t sensor_queue;
 
-float normal_random(float mean, float stddev) {
-    static int hasSpare = 0;
+static float normal_random(float mean, float stddev) {
+    static bool has_spare = false;
     static float spare;
 
-    if (hasSpare) {
-        hasSpare = 0;
+    if (has_spare) {
+        has_spare = false;
         return mean + stddev * spare;
     }
 
-    hasSpare = 1;
+    has_spare = true;
     float u, v, s;
     do {
         u = (float)rand() / RAND_MAX * 2.0f - 1.0f;
