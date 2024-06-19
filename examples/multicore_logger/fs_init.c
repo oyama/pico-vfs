@@ -18,7 +18,7 @@ bool fs_init(void) {
                                               PICO_DEFAULT_SPI_SCK_PIN,
                                               PICO_DEFAULT_SPI_CSN_PIN,
                                               10 * 1000 * 1000,
-                                              false);
+                                              true);
     filesystem_t *fat = filesystem_fat_create();
     int err = fs_mount("/sd", fat, sd);
     if (err == -1) {
