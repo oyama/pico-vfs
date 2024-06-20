@@ -1,5 +1,10 @@
 /*
- * Multi-core, high sampling rate data logger example
+ * Multi-core logger that saves 1kHz sampling data to an SD card
+ *
+ * This code is not specifically tuned. The data is substituted with random numbers,
+ * and the actual application will probably be reading the ADC or communicating with
+ * the sensor chip. Also, the method of outputting CSV files is slow. The method of
+ * outputting binary data is faster.
  *
  * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
  *
@@ -56,26 +61,31 @@ static float normal_random(float mean, float stddev) {
     return mean + stddev * u * s;
 }
 
-static void produce_sensor_data_task(void) {
+static bool sampling_task(repeating_timer_t *t) {
+    (void)t;
     sensor_data_t entry = {0};
-    while (1) {
-        entry.timestamp = (uint64_t)get_absolute_time();
-        entry.accel_x = normal_random(0, 0.01);
-        entry.accel_y = normal_random(0, 0.01);
-        entry.accel_z = normal_random(-1.0, 0.01);
-        entry.gyro_x = normal_random(0, 0.001);
-        entry.gyro_y = normal_random(0, 0.001);
-        entry.gyro_z = normal_random(0, 0.001);
-        entry.mag_x = normal_random(-0.25, 0.0001);
-        entry.mag_y = normal_random(0.1, 0.01);
-        entry.mag_z = normal_random(0.4, 0.01);
 
-        queue_add_blocking(&sensor_queue, &entry);
+    entry.timestamp = (uint64_t)get_absolute_time();
+    entry.accel_x = normal_random(0, 0.01);
+    entry.accel_y = normal_random(0, 0.01);
+    entry.accel_z = normal_random(-1.0, 0.01);
+    entry.gyro_x = normal_random(0, 0.001);
+    entry.gyro_y = normal_random(0, 0.001);
+    entry.gyro_z = normal_random(0, 0.001);
+    entry.mag_x = normal_random(-0.25, 0.0001);
+    entry.mag_y = normal_random(0.1, 0.01);
+    entry.mag_z = normal_random(0.4, 0.01);
 
-        absolute_time_t before = entry.timestamp + (uint64_t)((1.0 / SAMPLING_RATE_HZ) * 1000000);
-        while (absolute_time_diff_us(before, get_absolute_time()) <= 0)
-            tight_loop_contents();
-    }
+    queue_try_add(&sensor_queue, &entry);
+    return true;
+}
+
+static void produce_sensor_data_task(void) {
+    repeating_timer_t timer;
+    add_repeating_timer_us((int64_t)((1.0 / SAMPLING_RATE_HZ) * -1000000),
+                           &sampling_task, NULL, &timer);
+    while (true)
+        __wfi();
 }
 
 int main(void) {
@@ -91,7 +101,6 @@ int main(void) {
         printf("fopen failed: %s\n", strerror(errno));
     }
     setvbuf(fp, write_buffer, _IOFBF, sizeof(write_buffer));
-
     fprintf(fp, "Time,AccelX,AccelY,AccelZ,GyroX,GyroY,GyroZ,MagX,MagY,Magz\n");
 
     multicore_reset_core1();
