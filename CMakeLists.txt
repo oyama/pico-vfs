@@ -22,7 +22,7 @@ target_compile_options(blockdevice_sd INTERFACE -Werror -Wall -Wextra -Wnull-der
 target_link_libraries(blockdevice_sd INTERFACE
   blockdevice
   hardware_spi
-  hardware_sync
+  pico_sync
 )
 
 # Onboard-Flash blockdevice library
@@ -35,7 +35,6 @@ target_link_libraries(blockdevice_flash INTERFACE
   blockdevice
   hardware_exception
   hardware_flash
-  hardware_sync
   pico_sync
   pico_flash
 )

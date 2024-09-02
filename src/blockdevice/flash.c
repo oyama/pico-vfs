@@ -6,7 +6,6 @@
 #include <assert.h>
 #include <hardware/flash.h>
 #include <hardware/regs/addressmap.h>
-#include <hardware/sync.h>
 #include <pico/flash.h>
 #include <pico/mutex.h>
 #include <stdio.h>
