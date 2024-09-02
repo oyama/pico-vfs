@@ -43,7 +43,7 @@ jobs:
 
       - name: Build firmware
         working-directory: ${{github.workspace}}/pico-vfs
-        shell: bash
+        shell: pwsh
         run: |
           mkdir build
           cd build
