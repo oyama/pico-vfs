@@ -337,7 +337,7 @@ static void test_fputwc(void) {
     assert(fputwc(L'C', fp) == L'C');
 
     fseek(fp, 0, SEEK_SET);
-    wint_t buffer[512];
+    wchar_t buffer[512];
     fgetws(buffer, sizeof(buffer), fp);
     assert(wcscmp(buffer, L"WC") == 0);
 
@@ -353,7 +353,7 @@ static void test_fputws(void) {
     assert(fputws(L"WIDE CHAR\n", fp) == 0);
 
     fseek(fp, 0, SEEK_SET);
-    wint_t buffer[512];
+    wchar_t buffer[512];
     fgetws(buffer, sizeof(buffer), fp);
     assert(wcscmp(buffer, L"WIDE CHAR\n") == 0);
 
@@ -467,10 +467,9 @@ static void test_fwide(void) {
     fprintf(fp, "byte\n");
     assert(fwide(fp, 0) < 0);
 
-    fp = freopen(NULL, "w", fp);
+    fp = freopen("/fwide", "w", fp);
     assert(fwide(fp, 0) == 0);
     assert(fwide(fp, 1) > 0);
-
     fclose(fp);
 
     fp = fopen("/fwide.wide", "w");
