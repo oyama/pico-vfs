@@ -5,9 +5,6 @@ on:
     branches:
       - 'test_workflow'
       - 'main'
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
     runs-on: windows-latest
@@ -41,11 +38,16 @@ jobs:
         working-directory: ${{github.workspace}}/pico-vfs
         run: choco install .github/workflows/choco_packages.config
 
-      - name: Build firmware
+      - name: Create Build Environment
         working-directory: ${{github.workspace}}/pico-vfs
+        run:  cmake -E make_directory ${{github.workspace}}/pico-vfs/build
+
+      - name: Configure CMake
+        shell: bash
+        working-directory: ${{github.workspace}}/pico-vfs/build
+        run: PICO_SDK_PATH=../../pico-sdk cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        working-directory: ${{github.workspace}}/pico-vfs/build
         shell: pwsh
-        run: |
-          mkdir build
-          cd build
-          cmake .. -G Ninja -DPICO_SDK_PATH=../../pico-sdk -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DPICO_BOARD=pico
-          cmake --build . --target integration
+        run: cmake --build . --target integration --config Release
