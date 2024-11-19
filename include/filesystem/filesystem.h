@@ -19,7 +19,7 @@ extern "C" {
 #include <unistd.h>
 #include "blockdevice/blockdevice.h"
 
-#define PATH_MAX   256
+#define FS_PATH_MAX   256
 
 enum {
     FILESYSTEM_TYPE_FAT,
