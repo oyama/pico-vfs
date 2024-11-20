@@ -407,11 +407,11 @@ static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
 
     st->st_size = f.fsize;
     st->st_mode = 0;
-    st->st_mtime = mktime(&mtime);
     st->st_mode |= (f.fattrib & AM_DIR) ? S_IFDIR : S_IFREG;
     st->st_mode |= (f.fattrib & AM_RDO) ?
                    (S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) :
                    (S_IRWXU | S_IRWXG | S_IRWXO);
+    st->st_mtime = mktime(&mtime);
     return 0;
 }
 
