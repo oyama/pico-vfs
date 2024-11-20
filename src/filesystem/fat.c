@@ -396,8 +396,18 @@ static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
     if (res != FR_OK) {
         return fat_error_remap(res);
     }
+
+    struct tm mtime = {0};
+    mtime.tm_year = (f.fdate >> 9) + 80;
+    mtime.tm_mon = (f.fdate >> 5) & 0b1111;
+    mtime.tm_mday = f.fdate & 0b11111;
+    mtime.tm_hour = f.ftime >> 11;
+    mtime.tm_min = (f.ftime >> 5) & 0b111111;
+    mtime.tm_sec = (f.ftime & 0b11111) << 1;
+
     st->st_size = f.fsize;
     st->st_mode = 0;
+    st->st_mtime = mktime(&mtime);
     st->st_mode |= (f.fattrib & AM_DIR) ? S_IFDIR : S_IFREG;
     st->st_mode |= (f.fattrib & AM_RDO) ?
                    (S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) :
