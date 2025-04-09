@@ -320,7 +320,7 @@ static const char *fat_path_prefix(char *dist, int id, const char *path) {
 static int file_remove(filesystem_t *fs, const char *path) {
     filesystem_fat_context_t *context = fs->context;
 
-    char fpath[PATH_MAX];
+    char fpath[FS_PATH_MAX];
     fat_path_prefix(fpath, context->id, path);
 
     mutex_enter_blocking(&context->_mutex);
@@ -337,8 +337,8 @@ static int file_remove(filesystem_t *fs, const char *path) {
 
 static int file_rename(filesystem_t *fs, const char *oldpath, const char *newpath) {
     filesystem_fat_context_t *context = fs->context;
-    char oldfpath[PATH_MAX];
-    char newfpath[PATH_MAX];
+    char oldfpath[FS_PATH_MAX];
+    char newfpath[FS_PATH_MAX];
     fat_path_prefix(oldfpath, context->id, oldpath);
     fat_path_prefix(newfpath, context->id, newpath);
 
@@ -355,7 +355,7 @@ static int file_rename(filesystem_t *fs, const char *oldpath, const char *newpat
 static int file_mkdir(filesystem_t *fs, const char *path, mode_t mode) {
     (void)mode;
     filesystem_fat_context_t *context = fs->context;
-    char fpath[PATH_MAX];
+    char fpath[FS_PATH_MAX];
     fat_path_prefix(fpath, context->id, path);
 
     mutex_enter_blocking(&context->_mutex);
@@ -370,7 +370,7 @@ static int file_mkdir(filesystem_t *fs, const char *path, mode_t mode) {
 
 static int file_rmdir(filesystem_t *fs, const char *path) {
     filesystem_fat_context_t *context = fs->context;
-    char fpath[PATH_MAX];
+    char fpath[FS_PATH_MAX];
     fat_path_prefix(fpath, context->id, path);
 
     mutex_enter_blocking(&context->_mutex);
@@ -385,7 +385,7 @@ static int file_rmdir(filesystem_t *fs, const char *path) {
 
 static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
     filesystem_fat_context_t *context = fs->context;
-    char fpath[PATH_MAX];
+    char fpath[FS_PATH_MAX];
     fat_path_prefix(fpath, context->id, path);
     FILINFO f = {0};
 
@@ -396,12 +396,22 @@ static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
     if (res != FR_OK) {
         return fat_error_remap(res);
     }
+
+    struct tm mtime = {0};
+    mtime.tm_year = (f.fdate >> 9) + 80;
+    mtime.tm_mon = (f.fdate >> 5) & 0b1111;
+    mtime.tm_mday = f.fdate & 0b11111;
+    mtime.tm_hour = f.ftime >> 11;
+    mtime.tm_min = (f.ftime >> 5) & 0b111111;
+    mtime.tm_sec = (f.ftime & 0b11111) << 1;
+
     st->st_size = f.fsize;
     st->st_mode = 0;
     st->st_mode |= (f.fattrib & AM_DIR) ? S_IFDIR : S_IFREG;
     st->st_mode |= (f.fattrib & AM_RDO) ?
                    (S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) :
                    (S_IRWXU | S_IRWXG | S_IRWXO);
+    st->st_mtime = mktime(&mtime);
     return 0;
 }
 
@@ -422,7 +432,7 @@ static int file_open(filesystem_t *fs, fs_file_t *file, const char *path, int fl
     if (flags & O_APPEND)
         open_mode |= FA_OPEN_APPEND;
 
-    char fpath[PATH_MAX];
+    char fpath[FS_PATH_MAX];
     filesystem_fat_context_t *context = fs->context;
     fat_path_prefix(fpath, context->id, path);
     fat_file_t *fat_file = file->context = calloc(1, sizeof(fat_file_t));
@@ -586,7 +596,7 @@ static int file_truncate(filesystem_t *fs, fs_file_t *file, off_t length) {
 
 static int dir_open(filesystem_t *fs, fs_dir_t *dir, const char *path) {
     filesystem_fat_context_t *context = fs->context;
-    char fpath[PATH_MAX];
+    char fpath[FS_PATH_MAX];
     fat_path_prefix(fpath, context->id, path);
 
     FATFS_DIR *dh = calloc(1, sizeof(FATFS_DIR));
