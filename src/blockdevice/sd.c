@@ -674,8 +674,6 @@ static uint64_t _sd_sectors(void *_config) {
             capacity = (uint64_t)blocknr * block_len;  // memory capacity = BLOCKNR * BLOCK_LEN
             blocks = capacity / config->block_size;
             debug_if(SD_DBG, "Standard Capacity: c_size: %" PRIu32 " \n", c_size);
-            debug_if(SD_DBG, "Sectors: 0x%" PRIx64 " : %" PRIu64 "\n", blocks, blocks);
-            debug_if(SD_DBG, "Capacity: 0x%" PRIx64 " : %" PRIu64 " MB\n", capacity, (capacity / (1024U * 1024U)));
 
             // ERASE_BLK_EN = 1: Erase in multiple of 512 bytes supported
             if (ext_bits(csd, 46, 46)) {
@@ -690,8 +688,6 @@ static uint64_t _sd_sectors(void *_config) {
             hc_c_size = ext_bits(csd, 69, 48);            // device size : C_SIZE : [69:48]
             blocks = (hc_c_size + 1) << 10;               // block count = C_SIZE+1) * 1K byte (512B is block size)
             debug_if(SD_DBG, "SDHC/SDXC Card: hc_c_size: %" PRIu32 " \n", hc_c_size);
-            debug_if(SD_DBG, "Sectors: 0x%" PRIx64 "x : %" PRIu64 "\n", blocks, blocks);
-            debug_if(SD_DBG, "Capacity: %" PRIu64 " MB\n", (blocks / (2048U)));
             // ERASE_BLK_EN is fixed to 1, which means host can erase one or multiple of 512 bytes.
             config->erase_size = BLOCK_SIZE_HC;
             break;
