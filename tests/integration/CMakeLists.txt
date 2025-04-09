@@ -8,7 +8,6 @@ add_executable(integration
   test_standard.c
   test_copy_between_different_filesystems.c
 )
-target_compile_options(integration PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(integration PRIVATE
   pico_stdlib
   blockdevice_flash

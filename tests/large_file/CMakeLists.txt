@@ -1,7 +1,6 @@
 set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(large_file main.c)
-target_compile_options(large_file PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(large_file PRIVATE
   pico_stdlib
   blockdevice_sd

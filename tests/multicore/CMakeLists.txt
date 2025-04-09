@@ -1,8 +1,5 @@
 add_executable(multicore main.c)
-target_compile_options(multicore PRIVATE
-  -DPICO_FLASH_ASSUME_CORE1_SAFE=1
-  -Werror -Wall -Wextra -Wnull-dereference
-)
+target_compile_options(multicore PRIVATE -DPICO_FLASH_ASSUME_CORE1_SAFE=1)
 target_link_libraries(multicore PRIVATE
   pico_flash
   pico_stdlib

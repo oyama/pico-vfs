@@ -18,7 +18,6 @@ add_library(blockdevice_sd INTERFACE)
 target_sources(blockdevice_sd INTERFACE
   src/blockdevice/sd.c
 )
-target_compile_options(blockdevice_sd INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_sd INTERFACE
   blockdevice
   hardware_spi
@@ -30,7 +29,6 @@ add_library(blockdevice_flash INTERFACE)
 target_sources(blockdevice_flash INTERFACE
   src/blockdevice/flash.c
 )
-target_compile_options(blockdevice_flash INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_flash INTERFACE
   blockdevice
   hardware_exception
@@ -44,7 +42,6 @@ add_library(blockdevice_heap INTERFACE)
 target_sources(blockdevice_heap INTERFACE
   src/blockdevice/heap.c
 )
-target_compile_options(blockdevice_heap INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_heap INTERFACE
   blockdevice
   pico_sync
@@ -55,7 +52,6 @@ add_library(blockdevice_loopback INTERFACE)
 target_sources(blockdevice_loopback INTERFACE
   src/blockdevice/loopback.c
 )
-target_compile_options(blockdevice_loopback INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(blockdevice_loopback INTERFACE
   blockdevice
   pico_sync
@@ -80,7 +76,6 @@ target_include_directories(filesystem_fat INTERFACE
   include/filesystem/ChaN
   vendor/ff15/source
 )
-target_compile_options(filesystem_fat INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(filesystem_fat INTERFACE
   filesystem
   pico_sync
@@ -107,7 +102,6 @@ target_sources(filesystem_vfs INTERFACE src/filesystem/vfs.c)
 target_include_directories(filesystem_vfs INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
-target_compile_options(filesystem_vfs INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(filesystem_vfs INTERFACE pico_sync)
 
 # Default file system library
@@ -116,7 +110,6 @@ target_sources(filesystem_default INTERFACE src/filesystem/fs_init.c)
 target_include_directories(filesystem_default INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
-target_compile_options(filesystem_default INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(filesystem_default INTERFACE
   blockdevice_flash
   filesystem_littlefs

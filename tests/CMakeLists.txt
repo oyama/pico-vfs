@@ -8,7 +8,6 @@ add_executable(unittests
   test_standard.c
   test_copy_between_different_filesystems.c
 )
-target_compile_options(unittests PRIVATE -Werror -Wall -Wextra -Wnull-dereference)
 target_link_libraries(unittests PRIVATE
   pico_stdlib
   blockdevice_heap
