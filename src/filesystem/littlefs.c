@@ -289,7 +289,7 @@ static int file_close(filesystem_t *fs, fs_file_t *file) {
     return _error_remap(err);
 }
 
-static int file_read(filesystem_t *fs, fs_file_t *file, void *buffer, size_t len) {
+static ssize_t file_read(filesystem_t *fs, fs_file_t *file, void *buffer, size_t len) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
 
@@ -300,7 +300,7 @@ static int file_read(filesystem_t *fs, fs_file_t *file, void *buffer, size_t len
     return _error_remap(res);
 }
 
-static int file_write(filesystem_t *fs, fs_file_t *file, const void *buffer, size_t len) {
+static ssize_t file_write(filesystem_t *fs, fs_file_t *file, const void *buffer, size_t len) {
     filesystem_littlefs_context_t *context = fs->context;
     lfs_file_t *f = file->context;
 
