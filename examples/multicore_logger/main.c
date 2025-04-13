@@ -6,7 +6,7 @@
  * the sensor chip. Also, the method of outputting CSV files is slow. The method of
  * outputting binary data is faster.
  *
- * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
+ * Copyright 2024, Hiroyuki OYAMA
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */

@@ -1,6 +1,6 @@
 /* Block device driver for SD and MMC cards via SPI
  *
- * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
+ * Copyright 2024, Hiroyuki OYAMA
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *

@@ -1,3 +1,8 @@
+/*
+ * Copyright 2024, Hiroyuki OYAMA
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 #include <FreeRTOS.h>
 #include <errno.h>
 #include <pico/stdlib.h>

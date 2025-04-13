@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, Hiroyuki OYAMA. All rights reserved.
+ * Copyright 2024, Hiroyuki OYAMA
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -32,15 +32,9 @@ static int init(blockdevice_t *device) {
         return BD_ERROR_OK;
     }
 
-    struct stat finfo = {0};
-    int err = stat(config->path, &finfo);
-    if (err == 0) {
+    config->fildes = open(config->path, O_RDWR|O_CREAT, 0644);
+    if (config->fildes == -1 && errno == EEXIST) {
         config->fildes = open(config->path, O_RDWR);
-    } else if (err == -1 && errno == ENOENT) {
-        config->fildes = open(config->path, O_RDWR|O_CREAT);
-    } else {
-        mutex_exit(&config->_mutex);
-        return -errno;
     }
     if (config->fildes == -1) {
         mutex_exit(&config->_mutex);
