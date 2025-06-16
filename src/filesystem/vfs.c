@@ -21,7 +21,7 @@ typedef struct {
 typedef struct {
     fs_file_t *file;
     filesystem_t *filesystem;
-    char path[FS_PATH_MAX + 1];
+    char path[PATH_MAX + 1];
 } file_descriptor_t;
 
 typedef struct {
@@ -434,7 +434,7 @@ int _open(const char *path, int oflags, ...) {
         return _error_remap(err);
     }
     file_descriptor[FILENO_INDEX(fd)].filesystem = fs;
-    strncpy(file_descriptor[FILENO_INDEX(fd)].path, path, FS_PATH_MAX);
+    strncpy(file_descriptor[FILENO_INDEX(fd)].path, path, PATH_MAX);
 
     recursive_mutex_exit(&_mutex);
 
