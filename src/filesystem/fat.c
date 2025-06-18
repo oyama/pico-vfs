@@ -399,7 +399,7 @@ static int file_stat(filesystem_t *fs, const char *path, struct stat *st) {
 
     struct tm mtime = {0};
     mtime.tm_year = (f.fdate >> 9) + 80;
-    mtime.tm_mon = (f.fdate >> 5) & 0b1111;
+    mtime.tm_mon = ((f.fdate >> 5) & 0b1111) - 1;
     mtime.tm_mday = f.fdate & 0b11111;
     mtime.tm_hour = f.ftime >> 11;
     mtime.tm_min = (f.ftime >> 5) & 0b111111;
