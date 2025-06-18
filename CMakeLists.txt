@@ -108,7 +108,7 @@ target_include_directories(filesystem_vfs INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/include
 )
 target_compile_options(filesystem_vfs INTERFACE -Werror -Wall -Wextra -Wnull-dereference)
-target_link_libraries(filesystem_vfs INTERFACE pico_sync)
+target_link_libraries(filesystem_vfs INTERFACE pico_sync -Wl,--wrap=_ftello_r)
 
 # Default file system library
 add_library(filesystem_default INTERFACE)
